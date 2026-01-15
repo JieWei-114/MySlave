@@ -1,0 +1,36 @@
+<h2>Chat with Backend</h2>
+
+<div class="chat-window" appAutoScroll (scroll)="onScroll($event)">
+<app-chat-message-bubble
+  *ngFor="let msg of store.messageList()"
+  [message]="msg" />
+</div>
+<p class="typing" *ngIf="isTyping">
+  Typing…
+</p>
+<div class="chat-input">
+  <textarea
+    appAutoFocus
+    appAutoResize
+    [(ngModel)]="message"
+    placeholder="Type a message"
+    rows="2"
+    [disabled]="store.loading()"
+    (keydown)="onKeyDown($event)"
+  ></textarea>
+
+  <app-button
+    (click)="send()"
+    [loading]="store.loading()"
+  >
+    <img src="assets/images/test.jpg" width="14" />
+    Send
+  </app-button>
+
+<button *ngIf="store.loading()" (click)="store.stop()">Stop</button>
+
+</div>
+
+<p *ngIf="store.loading()">Sending...</p>
+<app-error-banner [message]="store.error()" />
+

@@ -1,0 +1,41 @@
+<div class="sidebar">
+  <button class="new" (click)="newSession.emit()">＋ New Chat</button>
+
+  <ng-container *ngIf="sessions.length; else empty">
+    <div
+      class="session"
+      *ngFor="let s of sessions"
+      [class.active]="s.id === activeId"
+      (click)="selectSession.emit(s.id)"
+    >
+      <span
+        (dblclick)="startEdit(s); $event.stopPropagation()"
+        *ngIf="editingId !== s.id"
+      >
+        {{ s.title }}
+      </span>
+
+      <input
+        *ngIf="editingId === s.id"
+        [(ngModel)]="draftTitle"
+        (keydown.enter)="commitEdit()"
+        (blur)="commitEdit()"
+        (click)="$event.stopPropagation()"
+      />
+
+      <button
+        class="delete"
+        (click)="deleteSession.emit(s.id); $event.stopPropagation()"
+      >
+        ✕
+      </button>
+    </div>
+  </ng-container>
+
+  <ng-template #empty>
+    <div class="empty">
+      <p>No chats yet</p>
+      <small>Start a new conversation</small>
+    </div>
+  </ng-template>
+</div>

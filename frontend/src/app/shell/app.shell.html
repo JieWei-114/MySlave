@@ -1,0 +1,14 @@
+<div class="layout">
+  <app-sidebar
+    [sessions]="store.visibleSessions()"
+    [activeId]="store.currentSessionId()"
+    (newSession)="onNewChat()"
+    (selectSession)="onSelectChat($event)"
+    (deleteSession)="onDeleteChat($event)"
+    (renameSession)="onRenameChat($event)"
+  />
+
+  <main class="content">
+    <router-outlet />
+  </main>
+</div>

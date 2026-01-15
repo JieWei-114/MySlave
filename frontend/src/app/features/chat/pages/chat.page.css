@@ -1,0 +1,36 @@
+.chat-window {
+  border: 1px solid #ccc;
+  padding: 8px;
+  margin-bottom: 8px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.message {
+  margin-bottom: 6px;
+}
+
+.message.user {
+  text-align: right;
+}
+
+.message.assistant {
+  text-align: left;
+}
+
+textarea {
+  flex: 1;
+  resize: none;
+  padding: 6px;
+  font-family: inherit;
+}
+
+.typing {
+  font-size: 12px;
+  color: #666;
+  margin-top: 4px;
+}
+
+.error {
+  color: red;
+}
