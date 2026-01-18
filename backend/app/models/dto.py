@@ -8,7 +8,7 @@ class SendMessageRequest(BaseModel):
 
 class RenameSessionRequest(BaseModel):
     title: str
-    
+
 class CreateMemoryRequest(BaseModel):
     content: str
     chat_sessionId: str
