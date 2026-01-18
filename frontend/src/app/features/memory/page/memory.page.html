@@ -1,0 +1,19 @@
+<div class="memory-panel">
+  <h3>🧠 Memories</h3>
+
+  <div *ngFor="let m of store.memories()">
+    <label>
+      <input
+        type="checkbox"
+        [checked]="m.enabled"
+        (change)="store.toggle(m)"
+      />
+      {{ m.content }}
+    </label>
+
+    <button (click)="store.delete(m)">🗑</button>
+  </div>
+
+  <textarea [(ngModel)]="newMemory"></textarea>
+  <button (click)="add()">Add</button>
+</div>

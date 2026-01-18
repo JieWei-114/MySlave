@@ -1,7 +1,8 @@
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
+from urllib.parse import quote
 
 from app.models.dto import (
     CreateSessionRequest,
@@ -19,6 +20,7 @@ from app.services.chat_service import (
 from app.services.ollama_service import stream_ollama
 from app.services.chat_service import add_message
 from app.core.db import sessions_collection
+from app.services.chat_service import build_prompt_with_memory
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -57,15 +59,17 @@ async def stream_message(session_id: str, content: str):
         add_message(session_id, "user", content)
     except ValueError:
         raise HTTPException(status_code=404, detail="Session not found")
+    
+    #build prompt with memory
+    prompt = build_prompt_with_memory(content, chat_sessionId=session_id)
 
     async def event_generator():
         assistant_text = ""
 
-        async for token in stream_ollama(content):
+        async for token in stream_ollama(prompt):
             assistant_text += token
-            yield f"data: {token}\n\n"
+            yield f"data: {quote(token)}\n\n"
 
-        # 👇 streaming 完成后一次性写 DB
         add_message(session_id, "assistant", assistant_text)
         yield "event: done\ndata: end\n\n"
 
@@ -90,14 +94,11 @@ def get_messages(
 
     messages = session.get("messages", [])
 
-    # ⏱️ 按时间排序
     messages = sorted(messages, key=lambda m: m["created_at"])
 
-    # 🔁 before 游标
     if before:
-        before_dt = datetime.fromisoformat(before)
+        before_dt = datetime.fromisoformat(before.replace("Z", ""))
         messages = [m for m in messages if m["created_at"] < before_dt]
 
-    # ⬅️ 取最后 limit 条
     return messages[-limit:]
 

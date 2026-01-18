@@ -8,3 +8,9 @@
   padding: 12px;
   overflow: hidden;
 }
+
+.memory-drawer {
+  width: 320px;
+  border-left: 1px solid #ddd;
+  padding: 12px;
+}

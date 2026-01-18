@@ -6,9 +6,19 @@
     (selectSession)="onSelectChat($event)"
     (deleteSession)="onDeleteChat($event)"
     (renameSession)="onRenameChat($event)"
+    (toggleMemory)="toggleMemory()"
+    (toggleSidebar)="toggleSidebar()"
+    [collapsed]="sidebarCollapsed"
   />
 
   <main class="content">
     <router-outlet />
   </main>
+
+  <!-- Memory Panel as Drawer -->
+  <app-memory-panel
+    *ngIf="showMemory"
+    [sessionId]="store.currentSessionId()!"
+    class="memory-drawer"
+  />
 </div>

@@ -4,8 +4,10 @@ import time
 from datetime import datetime
 from bson import ObjectId
 from typing import Generator
+from urllib.parse import quote
 
 from app.core.db import sessions_collection
+from app.services.memory_service import list_enabled_memories, list_all_memories
 
 def create_session(title: str) -> dict:
     now = datetime.utcnow()
@@ -78,7 +80,6 @@ def stream_chat_reply(
     content: str
 ) -> Generator[str, None, None]:
 
-    # 1️⃣ 先存 user message
     sessions_collection.update_one(
         {"id": session_id},
         {
@@ -93,17 +94,15 @@ def stream_chat_reply(
         }
     )
 
-    # 2️⃣ mock token stream（之后换 AI）
     reply = f"You said: {content}"
 
     assistant_msg = ""
 
     for ch in reply:
         assistant_msg += ch
-        yield f"data: {ch}\n\n"
+        yield f"data: {quote(ch)}\n\n"
         time.sleep(0.02)
 
-    # 3️⃣ stream 完成后才存 assistant
     sessions_collection.update_one(
         {"id": session_id},
         {
@@ -138,3 +137,33 @@ def rename_session(session_id: str, title: str) -> dict:
         "id": session_id,
         "title": title
     }
+
+def build_prompt_with_memory(
+    user_content: str,
+    chat_sessionId: str = "default"
+) -> str:
+    """
+    Build final prompt with persistent memories + user input
+    """
+
+    memories = list_enabled_memories(chat_sessionId)
+
+    if not memories:
+        return user_content
+
+    memory_block = "\n".join(
+        f"- {m['content']}" for m in memories
+    )
+
+    prompt = f"""You are an assistant.
+
+The following are persistent memories about the user.
+{memory_block}
+
+Conversation:
+User: {user_content}
+"""
+    
+    print("FINAL PROMPT:\n", prompt)
+
+    return prompt

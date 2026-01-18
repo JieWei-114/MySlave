@@ -2,15 +2,20 @@ import { Component } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
 import { SidebarComponent } from '../shared/ui/sidebar/sidebar.component';
 import { ChatStore } from '../features/chat/store/chat.store';
+import { MemoryPage } from '../features/memory/page/memory.page';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, SidebarComponent],
+  imports: [RouterOutlet, SidebarComponent, MemoryPage, CommonModule],
   templateUrl: './app.shell.html',
   styleUrls: ['./app.shell.css'],
 })
 export class AppShell {
+  showMemory = false;
+  sidebarCollapsed = false;
+
   constructor(
     public store: ChatStore,
     private router: Router
@@ -37,5 +42,11 @@ export class AppShell {
   }
   onRenameChat({ id, title }: { id: string; title: string }) {
   this.store.renameSession(id, title);
+  }
+  toggleMemory() {
+    this.showMemory = !this.showMemory;
+  }
+  toggleSidebar() {
+    this.sidebarCollapsed = !this.sidebarCollapsed;
   }
 }

@@ -3,13 +3,13 @@ import json
 
 OLLAMA_URL = "http://localhost:11434/api/generate"
 
-async def stream_ollama(prompt: str):
+async def stream_ollama(prompt: str, model: str = "qwen2.5:3b"):
     async with httpx.AsyncClient(timeout=None) as client:
         async with client.stream(
             "POST",
             OLLAMA_URL,
             json={
-                "model": "qwen2.5:3b",
+                "model": model,
                 "prompt": prompt,
                 "stream": True
             }

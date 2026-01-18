@@ -7,4 +7,4 @@ client = MongoClient(MONGO_URL)
 db = client["chat_app"]
 
 sessions_collection = db["sessions"]
-messages_collection = db["messages"]
+memories_collection = db["memories"]

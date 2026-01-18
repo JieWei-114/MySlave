@@ -1,30 +1,32 @@
 import { Component, Input } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { ChatMessage } from '../../../features/chat/services/chat.model';
+import { ChatStore } from '../../../features/chat/store/chat.store';
+import { MemoryStore } from '../../../features/memory/store/memory.store';
+import { CommonModule } from '@angular/common';
 import { MarkdownPipe } from '../../pipes/markdown.pipe';
 
 @Component({
   selector: 'app-chat-message-bubble',
   standalone: true,
-  imports: [CommonModule, MarkdownPipe],
-  template: `
-    <div class="bubble" [class.user]="message.role === 'user'">
-      <div [innerHTML]="message.content | markdown"></div>
-    </div>
-  `,
-  styles: [`
-    .bubble {
-      margin-bottom: 6px;
-      padding: 6px 8px;
-      border-radius: 6px;
-      max-width: 70%;
-    }
-    .bubble.user {
-      background: #e0f0ff;
-      margin-left: auto;
-    }
-  `]
+  imports: [CommonModule],
+  templateUrl: './chat-message-buble.component.html',
+  styleUrls: ['./chat-message-buble.component.css'],
 })
 export class ChatMessageBubbleComponent {
-  @Input({ required: true }) message!: ChatMessage;
+  @Input() message!: ChatMessage;
+
+  constructor(public store: MemoryStore) {}
+
+  remember(): void {
+    this.store.rememberMessage(this.message);
+  }
+  get isUser(): boolean {
+    return this.message.role === 'user';
+  }
+
+  get isAssistant(): boolean {
+    return this.message.role === 'assistant';
+  }
 }
+
+

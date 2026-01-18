@@ -11,11 +11,13 @@ import { PLATFORM_ID } from '@angular/core';
 import { ChatApi } from '../services/chat.api';
 import { ChatMessage } from '../services/chat.model';
 import { ChatSession } from '../services/chat-session.model';
+import { MemoryApi } from '../../memory/service/memory.api';
 
 @Injectable({ providedIn: 'root' })
 export class ChatStore {
   private chatApi = inject(ChatApi);
   private platformId = inject(PLATFORM_ID);
+  private memoryApi = inject(MemoryApi);
   private isBrowser = isPlatformBrowser(this.platformId);
 
   /** ============================
@@ -309,7 +311,7 @@ export class ChatStore {
             const msgs = [...s[sessionId].messages];
             msgs[assistantIndex] = {
               ...msgs[assistantIndex],
-              content: this.appendToken(msgs[assistantIndex].content, token)
+              content: msgs[assistantIndex].content + token
             };
             return { ...s, [sessionId]: { ...s[sessionId], messages: msgs } };
           });
@@ -355,16 +357,6 @@ export class ChatStore {
     this.stopStreaming?.();
     this.stopStreaming = null;
     this.loading.set(false);
-  }
-
-  private appendToken(prev: string, token: string): string {
-    if (!prev) return token;
-
-    const needSpace =
-      /[a-zA-Z0-9]$/.test(prev) &&
-      /^[a-zA-Z0-9]/.test(token);
-
-    return needSpace ? prev + ' ' + token : prev + token;
   }
 
   /** ============================

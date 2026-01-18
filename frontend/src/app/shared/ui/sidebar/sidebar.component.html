@@ -1,5 +1,13 @@
-<div class="sidebar">
+<div class="sidebar" [class.collapsed]="collapsed">
   <button class="new" (click)="newSession.emit()">＋ New Chat</button>
+
+  <button class="memory" (click)="toggleMemory.emit()">
+    🧠 Memory
+  </button>
+
+  <button class="collapse" (click)="toggleSidebar.emit()">
+    ⬅
+  </button>
 
   <ng-container *ngIf="sessions.length; else empty">
     <div

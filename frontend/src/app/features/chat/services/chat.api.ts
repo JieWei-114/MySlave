@@ -64,7 +64,10 @@ export class ChatApi {
 
     const es = new EventSource(url);
 
-    es.onmessage = e => onToken(e.data);
+    es.onmessage = e => {
+      const token = decodeURIComponent(e.data);
+      onToken(token);
+    };
 
     es.addEventListener('done', () => {
       es.close();

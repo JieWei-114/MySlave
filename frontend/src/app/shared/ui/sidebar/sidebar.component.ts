@@ -13,6 +13,10 @@ import { ChatSession } from '../../../features/chat/services/chat-session.model'
 export class SidebarComponent {
   @Input({ required: true }) sessions!: ChatSession[];
   @Input({ required: true }) activeId!: string | null;
+  @Input() collapsed = false;
+
+  @Output() toggleMemory = new EventEmitter<void>();
+  @Output() toggleSidebar = new EventEmitter<void>();
 
   @Output() newSession = new EventEmitter<void>();
   @Output() selectSession = new EventEmitter<string>();

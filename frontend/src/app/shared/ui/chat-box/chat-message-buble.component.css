@@ -1,0 +1,34 @@
+.bubble {
+  max-width: 75%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  margin: 6px 0;
+  position: relative;
+  white-space: pre-wrap; /* 保留换行 */
+}
+
+.bubble.user {
+  background: #dcf8c6;
+  margin-left: auto;
+  text-align: left;
+}
+
+.bubble.assistant {
+  background: #f1f1f1;
+  margin-right: auto;
+}
+
+.remember {
+  position: absolute;
+  bottom: -6px;
+  right: -6px;
+  font-size: 12px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  opacity: 0.6;
+}
+
+.remember:hover {
+  opacity: 1;
+}
