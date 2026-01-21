@@ -106,15 +106,15 @@ API Docs: **http://127.0.0.1:8000/docs**
 cd frontend
 
 # Delete node_modules
-rm -rf node_modules 
+rm -rf node_modules
 
-# Delete Angular cache 
+# Delete Angular cache
 rm -rf .angular
 
 # Delete local file
 rm -rf package-lock.json
 
-# Clear npm cache 
+# Clear npm cache
 npm cache clean --force
 
 # Install dependencies
@@ -183,12 +183,13 @@ AVAILABLE_MODELS = [
 ```
 
 ## Code Quality & Formatting Guide
+
 ```Frontend - Prettier
 Check for issues: npm run format:check
 Fix all files: npm run format:fix
 ```
 
-```Backend	- Ruff
+```Backend - Ruff
 Lint & Sort Imports: ruff check --fix .
 Format Style: ruff format .
 
@@ -217,3 +218,7 @@ This project is **100% local**:
 - [Angular](https://angular.dev) - Frontend framework
 - [FastAPI](https://fastapi.tiangolo.com) - Backend framework
 - [MongoDB](https://www.mongodb.com) - Database
+
+## App screenshot
+
+![App screenshot](/frontend/src/assets/images/app_screenshot.png)
