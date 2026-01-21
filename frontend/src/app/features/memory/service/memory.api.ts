@@ -8,38 +8,27 @@ export class MemoryApi {
   private config = inject(AppConfigService);
 
   addMemory(content: string, chatSessionId: string) {
-    return this.http.post(
-      `${this.config.apiBaseUrl}/memory/`,
-      {
-        content,
-        chat_sessionId: chatSessionId
-      }
-    );
+    return this.http.post(`${this.config.apiBaseUrl}/memory/`, {
+      content,
+      chat_sessionId: chatSessionId,
+    });
   }
 
   getMemories(chatSessionId: string) {
     return this.http.get<any[]>(
-      `${this.config.apiBaseUrl}/memory/?chat_sessionId=${chatSessionId}`
+      `${this.config.apiBaseUrl}/memory/?chat_sessionId=${chatSessionId}`,
     );
   }
 
   enable(id: string) {
-    return this.http.patch(
-      `${this.config.apiBaseUrl}/memory/${id}/enable`,
-      {}
-    );
+    return this.http.patch(`${this.config.apiBaseUrl}/memory/${id}/enable`, {});
   }
 
   disable(id: string) {
-    return this.http.patch(
-      `${this.config.apiBaseUrl}/memory/${id}/disable`,
-      {}
-    );
+    return this.http.patch(`${this.config.apiBaseUrl}/memory/${id}/disable`, {});
   }
 
   delete(id: string) {
-    return this.http.delete(
-      `${this.config.apiBaseUrl}/memory/${id}`
-    );
+    return this.http.delete(`${this.config.apiBaseUrl}/memory/${id}`);
   }
 }

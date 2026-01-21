@@ -1,0 +1,9 @@
+# Ignore build outputs
+dist/
+.angular/
+
+# Ignore dependencies
+node_modules/
+
+# Ignore lock files
+package-lock.json

@@ -5,16 +5,15 @@ export const routes: Routes = [
   {
     path: '',
     pathMatch: 'full',
-    redirectTo: 'chat'
+    redirectTo: 'chat',
   },
   {
     path: 'chat',
     canActivate: [authGuard],
-    loadChildren: () =>
-      import('./features/chat/chat.routes').then(m => m.routes)
+    loadChildren: () => import('./features/chat/chat.routes').then((m) => m.routes),
   },
   {
     path: '**',
-    redirectTo: 'chat'
-  }
+    redirectTo: 'chat',
+  },
 ];

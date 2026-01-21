@@ -1,0 +1,13 @@
+[tool.ruff]
+# Match the line length of your frontend Prettier if desired (default is 88)
+line-length = 100
+
+[tool.ruff.lint]
+# Enable Pyflakes (F), E (Error), and I (Isort/Import sorting)
+select = ["E", "F", "I"]
+fixable = ["ALL"]
+
+[tool.ruff.format]
+# Use single quotes to stay consistent with your frontend config
+quote-style = "single"
+indent-style = "space"

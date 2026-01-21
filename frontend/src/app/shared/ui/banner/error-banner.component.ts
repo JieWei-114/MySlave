@@ -5,20 +5,8 @@ import { CommonModule } from '@angular/common';
   selector: 'app-error-banner',
   standalone: true,
   imports: [CommonModule],
-  template: `
-    <div class="error" *ngIf="message">
-      {{ message }}
-    </div>
-  `,
-  styles: [`
-    .error {
-      background: #ffe0e0;
-      color: #900;
-      padding: 6px;
-      margin-top: 8px;
-      border-radius: 4px;
-    }
-  `]
+  templateUrl: './error-banner.component.html',
+  styleUrls: ['./error-banner.component.css'],
 })
 export class ErrorBannerComponent {
   @Input() message = '';

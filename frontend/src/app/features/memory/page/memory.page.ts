@@ -1,22 +1,24 @@
-import { Component, Input, OnInit, effect, signal } from '@angular/core';
+import { Component, Input, OnInit, effect, signal, Output, EventEmitter } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { MemoryStore } from '../store/memory.store';
-
+import { AppButtonComponent } from '../../../shared/ui/button/app-button.component';
 @Component({
   selector: 'app-memory-panel',
   standalone: true,
-  imports: [FormsModule, CommonModule],
+  imports: [FormsModule, CommonModule, AppButtonComponent],
   templateUrl: './memory.page.html',
-  styleUrls: ['./memory.page.css']
+  styleUrls: ['./memory.page.css'],
 })
-export class MemoryPage{
+export class MemoryPage {
   private _sessionId = signal<string | null>(null);
 
   @Input({ required: true })
   set sessionId(value: string) {
     this._sessionId.set(value);
   }
+
+  @Output() close = new EventEmitter<void>();
 
   newMemory = '';
 
@@ -29,10 +31,6 @@ export class MemoryPage{
       this.store.load(id);
     });
   }
-
-//   ngOnInit() {
-//     this.store.load(this.sessionId);
-//   }
 
   add() {
     if (!this.newMemory.trim()) return;

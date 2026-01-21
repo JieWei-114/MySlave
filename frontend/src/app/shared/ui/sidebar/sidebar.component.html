@@ -1,49 +1,59 @@
 <div class="sidebar" [class.collapsed]="collapsed">
-  <button class="new" (click)="newSession.emit()">＋ New Chat</button>
-
-  <button class="memory" (click)="toggleMemory.emit()">
-    🧠 Memory
-  </button>
-
   <button class="collapse" (click)="toggleSidebar.emit()">
-    ⬅
+    {{ collapsed ? '▶' : '◀' }}
   </button>
 
-  <ng-container *ngIf="sessions.length; else empty">
-    <div
-      class="session"
-      *ngFor="let s of sessions"
-      [class.active]="s.id === activeId"
-      (click)="selectSession.emit(s.id)"
-    >
-      <span
-        (dblclick)="startEdit(s); $event.stopPropagation()"
-        *ngIf="editingId !== s.id"
-      >
-        {{ s.title }}
-      </span>
+  <ng-container *ngIf="!collapsed">
+    <button class="new" (click)="newSession.emit()">New Chat</button>
+    <button class="memory" [class.active]="showMemory" (click)="toggleMemory.emit()">Memory</button>
 
-      <input
-        *ngIf="editingId === s.id"
-        [(ngModel)]="draftTitle"
-        (keydown.enter)="commitEdit()"
-        (blur)="commitEdit()"
-        (click)="$event.stopPropagation()"
-      />
+    <div class="session-container" cdkDropList (cdkDropListDropped)="onDrop($event)">
+      <ng-container *ngIf="sessions.length; else empty">
+        <div
+          class="session"
+          *ngFor="let s of sessions"
+          cdkDrag
+          [class.active]="s.id === activeId"
+          (click)="selectSession.emit(s.id)"
+        >
+          <div class="session-content">
+            <span *ngIf="editingId !== s.id">
+              {{ s.title }}
+            </span>
 
-      <button
-        class="delete"
-        (click)="deleteSession.emit(s.id); $event.stopPropagation()"
-      >
-        ✕
-      </button>
+            <input
+              *ngIf="editingId === s.id"
+              [(ngModel)]="draftTitle"
+              (keydown.enter)="commitEdit()"
+              (blur)="commitEdit()"
+              (click)="$event.stopPropagation()"
+              autoFocus
+            />
+          </div>
+
+          <div class="menu-container">
+            <button class="menu-trigger" (click)="toggleMenu(s.id, $event)">⋮</button>
+
+            <div class="menu-dropdown" *ngIf="menuOpenId === s.id">
+              <button (click)="startEdit(s); $event.stopPropagation()">Rename</button>
+              <button
+                class="delete-opt"
+                (click)="deleteSession.emit(s.id); $event.stopPropagation()"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+
+          <div *cdkDragPlaceholder class="drag-placeholder"></div>
+        </div>
+      </ng-container>
     </div>
+
+    <ng-template #empty>
+      <div class="empty">
+        <p>No chats yet</p>
+      </div>
+    </ng-template>
   </ng-container>
-
-  <ng-template #empty>
-    <div class="empty">
-      <p>No chats yet</p>
-      <small>Start a new conversation</small>
-    </div>
-  </ng-template>
 </div>

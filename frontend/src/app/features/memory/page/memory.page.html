@@ -1,19 +1,43 @@
 <div class="memory-panel">
-  <h3>🧠 Memories</h3>
+  <div class="memory-header">
+    <div class="header-title">
+      <h3 class="header-memory">Memory Bank</h3>
+      <span class="count">{{ store.memories().length }} items</span>
+    </div>
 
-  <div *ngFor="let m of store.memories()">
-    <label>
-      <input
-        type="checkbox"
-        [checked]="m.enabled"
-        (change)="store.toggle(m)"
-      />
-      {{ m.content }}
-    </label>
-
-    <button (click)="store.delete(m)">🗑</button>
+    <button class="close-btn" (click)="close.emit()" title="Close memory panel">✕</button>
   </div>
 
-  <textarea [(ngModel)]="newMemory"></textarea>
-  <button (click)="add()">Add</button>
+  <div class="memory-list">
+    <div class="memory-item" *ngFor="let m of store.memories()" [class.disabled]="!m.enabled">
+      <label class="memory-checkbox">
+        <input type="checkbox" [checked]="m.enabled" (change)="store.toggle(m)" />
+        <span class="checkmark"></span>
+      </label>
+
+      <div class="memory-content">
+        {{ m.content }}
+      </div>
+
+      <button class="btn-delete" (click)="store.delete(m)" title="Delete memory">🗑</button>
+    </div>
+
+    <div class="empty-state" *ngIf="!store.memories().length">
+      <p>No memories yet</p>
+      <small>Add important information to remember</small>
+    </div>
+  </div>
+
+  <div class="memory-add-wrapper">
+    <div class="memory-add">
+      <textarea
+        [(ngModel)]="newMemory"
+        placeholder="Type something to remember..."
+        rows="1"
+      ></textarea>
+      <app-button class="btn-add" (click)="add()" [disabled]="!newMemory.trim()">Add</app-button>
+    </div>
+  </div>
+
+  <div class="resize-handle"></div>
 </div>

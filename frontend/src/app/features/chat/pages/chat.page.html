@@ -1,36 +1,89 @@
-<h2>Chat with Backend</h2>
+<div class="chat-container">
+  <div class="chat-header">
+    <div class="header-left">
+      <div class="custom-select-container">
+        <div class="selected-value" (click)="toggleDropdown($event)">
+          {{ store.currentModel().name }}
+          <span class="arrow" [class.open]="isDropdownOpen">▼</span>
+        </div>
 
-<div class="chat-window" appAutoScroll (scroll)="onScroll($event)">
-<app-chat-message-bubble
-  *ngFor="let msg of store.messageList()"
-  [message]="msg" />
+        <div class="custom-options-wrapper" *ngIf="isDropdownOpen">
+          <div class="custom-option" *ngFor="let model of models()" (click)="selectModel(model)">
+            {{ model.name }}
+          </div>
+        </div>
+      </div>
+      <span class="model-description" *ngIf="store.currentModel().description">
+        {{ store.currentModel().description }}
+      </span>
+    </div>
+
+    <span class="status" [class.loading]="store.loading()">
+      {{ store.loading() ? 'Thinking...' : 'Ready' }}
+    </span>
+  </div>
+
+  <div class="chat-window" appAutoScroll (scroll)="onScroll($event)">
+    <!-- Loading skeleton -->
+    <div *ngIf="store.loading() && !store.hasMessages()" class="skeleton-container">
+      <app-skeleton height="60px" *ngFor="let item of [1, 2, 3]"></app-skeleton>
+    </div>
+
+    <!-- Empty state -->
+    <div *ngIf="store.isEmpty()" class="empty-state">
+      <h3>Start a conversation</h3>
+      <p>Select a model and send your first message</p>
+    </div>
+
+    <!-- Messages -->
+    <div class="messages-container" *ngIf="store.hasMessages()">
+      <app-chat-message-bubble *ngFor="let msg of store.messageList()" [message]="msg" />
+
+      <div class="typing-indicator" *ngIf="isTyping">
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+      </div>
+    </div>
+  </div>
+
+  <app-error-banner [message]="store.error()" />
+
+  <div class="chat-input-wrapper">
+    <div class="chat-input">
+      <textarea
+        appAutoFocus
+        [(ngModel)]="message"
+        placeholder="Type your message... (Shift + Enter for new line)"
+        rows="1"
+        [disabled]="store.loading()"
+        (keydown)="onKeyDown($event)"
+      ></textarea>
+
+      <div class="input-actions">
+        <app-button *ngIf="store.loading()" (click)="store.stop()" title="Stop generation">
+          Stop
+        </app-button>
+
+        <app-button
+          *ngIf="!store.loading()"
+          class="btn-send"
+          (click)="send()"
+          [disabled]="!message.trim()"
+        >
+          Send
+        </app-button>
+      </div>
+    </div>
+  </div>
 </div>
-<p class="typing" *ngIf="isTyping">
-  Typing…
-</p>
-<div class="chat-input">
-  <textarea
-    appAutoFocus
-    appAutoResize
-    [(ngModel)]="message"
-    placeholder="Type a message"
-    rows="2"
-    [disabled]="store.loading()"
-    (keydown)="onKeyDown($event)"
-  ></textarea>
 
-  <app-button
-    (click)="send()"
-    [loading]="store.loading()"
-  >
-    <img src="assets/images/test.jpg" width="14" />
-    Send
-  </app-button>
-
-<button *ngIf="store.loading()" (click)="store.stop()">Stop</button>
-
-</div>
-
-<p *ngIf="store.loading()">Sending...</p>
-<app-error-banner [message]="store.error()" />
-
+<!-- Error boundary -->
+<app-error-boundary
+  *ngIf="store.error() && !isErrorDismissed()"
+  [error]="store.error()"
+  (retry)="retryLoadSessions()"
+  (close)="dismissError()"
+>
+</app-error-boundary>

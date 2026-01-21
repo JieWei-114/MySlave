@@ -1,20 +1,14 @@
-<div
-  class="bubble"
-  [class.user]="isUser"
-  [class.assistant]="isAssistant"
->
+<div class="bubble" [class.user]="isUser" [class.assistant]="isAssistant">
   <div class="content">
     {{ message.content }}
   </div>
 
-  <!-- remember button -->
   <button
     class="remember"
     *ngIf="isAssistant || isUser"
     (click)="remember()"
     title="Save to memory"
   >
-    {{ message.remembered ? '🧠 Saved' : '🧠 Remember' }}
+    {{ message.remembered ? 'Saved' : 'Remember' }}
   </button>
 </div>
-

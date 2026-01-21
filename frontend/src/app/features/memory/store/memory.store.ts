@@ -14,72 +14,53 @@ export class MemoryStore {
 
   readonly currentSessionId = signal<string | null>(null);
 
-  /* ======================
-   * 核心方法（唯一写 DB）
-   * ====================== */
   private saveMemory(content: string): void {
     const sessionId = this.currentSessionId();
     if (!sessionId) return;
 
     this.memoryApi.addMemory(content, sessionId).subscribe({
-      next: m => {
-        this.memories.update(list => [...list, m as Memory]);
+      next: (m) => {
+        this.memories.update((list) => [...list, m as Memory]);
       },
       error: () => {
         this.error.set('Failed to save memory');
-      }
+      },
     });
   }
 
-  /* ======================
-   * 语义方法
-   * ====================== */
-
-  /** 从聊天 message 记忆 */
   rememberMessage(message: ChatMessage): void {
     if (message.remembered) return;
     this.saveMemory(message.content);
-    message.remembered = true; // 前端标记
+    message.remembered = true;
   }
 
-  /** Memory 面板手动新增 */
   addManual(content: string): void {
     this.saveMemory(content);
   }
-
-  /* ======================
-   * 读取 / 操作
-   * ====================== */
 
   load(sessionId: string) {
     this.currentSessionId.set(sessionId);
     this.loading.set(true);
 
-    this.memoryApi.getMemories(sessionId).subscribe(m => {
+    this.memoryApi.getMemories(sessionId).subscribe((m) => {
       this.memories.set(m);
       this.loading.set(false);
     });
   }
 
   toggle(m: Memory) {
-    const action = m.enabled
-      ? this.memoryApi.disable(m.id)
-      : this.memoryApi.enable(m.id);
+    const action = m.enabled ? this.memoryApi.disable(m.id) : this.memoryApi.enable(m.id);
 
     action.subscribe(() => {
-      this.memories.update(list =>
-        list.map(x =>
-          x.id === m.id ? { ...x, enabled: !x.enabled } : x
-        )
+      this.memories.update((list) =>
+        list.map((x) => (x.id === m.id ? { ...x, enabled: !x.enabled } : x)),
       );
     });
   }
 
   delete(m: Memory) {
     this.memoryApi.delete(m.id).subscribe(() => {
-      this.memories.update(list =>
-        list.filter(x => x.id !== m.id)
-      );
+      this.memories.update((list) => list.filter((x) => x.id !== m.id));
     });
   }
 }

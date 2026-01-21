@@ -28,5 +28,3 @@ export class ChatMessageBubbleComponent {
     return this.message.role === 'assistant';
   }
 }
-
-

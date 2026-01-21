@@ -3,7 +3,7 @@ import { marked } from 'marked';
 
 @Pipe({
   name: 'markdown',
-  standalone: true
+  standalone: true,
 })
 export class MarkdownPipe implements PipeTransform {
   transform(value: string): string {

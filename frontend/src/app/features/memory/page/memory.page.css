@@ -1,0 +1,227 @@
+.memory-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  transition: all var(--transition-base);
+  position: relative;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.resize-handle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 8px;
+  height: 100%;
+  cursor: ew-resize;
+  background: transparent;
+  z-index: 1000;
+}
+
+.resize-handle::before {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 45%;
+  width: 5px;
+  height: 50px;
+  background: var(--gray-700);
+  border-radius: 2px;
+}
+
+.resize-handle:hover::before {
+  background: var(--gray-500);
+}
+
+.memory-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-md);
+  background: var(--primary-light);
+  border-radius: 12px 12px 0 0;
+  padding: 10px;
+}
+
+.close-btn {
+  padding: 10px 15px;
+  border-radius: var(--radius-md);
+  background: var(--primary-lite);
+  cursor: pointer;
+  color: var(--gray-500);
+  transition: all var(--transition-base);
+}
+
+.close-btn:hover {
+  background: var(--error-color);
+  color: white;
+  border-color: var(--error-color);
+}
+
+.header-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.header-memory {
+  padding-left: 10px;
+}
+
+.memory-list {
+  flex: 1;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  gap: var(--spacing-sm);
+  background-color: var(--primary-dark);
+}
+
+.memory-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: 10px;
+  background: var(--primary-light);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-base);
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.memory-item:hover {
+  box-shadow: var(--shadow-lg);
+}
+
+.memory-item.disabled {
+  opacity: 0.5;
+  background: var(--gray-700);
+}
+
+.memory-item.disabled .memory-content {
+  text-decoration: line-through;
+  color: var(--gray-400);
+}
+
+.memory-checkbox {
+  position: relative;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.memory-checkbox input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.checkmark {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--gray-400);
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-base);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.memory-checkbox input:checked ~ .checkmark {
+  background: var(--primary-dark);
+  border: none;
+}
+
+.memory-checkbox input:checked ~ .checkmark::after {
+  content: '✓';
+  color: white;
+}
+
+.memory-content {
+  flex: 1;
+  color: white;
+}
+
+.btn-delete {
+  padding: 6px 10px;
+  background: transparent;
+  color: white;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-base);
+  flex-shrink: 0;
+  opacity: 0;
+}
+
+.memory-item:hover .btn-delete {
+  opacity: 1;
+}
+
+.btn-delete:hover {
+  background: var(--error-color);
+  color: white;
+  transform: scale(1.1);
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  margin: auto;
+}
+
+.empty-state p {
+  font-size: 16px;
+  margin-bottom: var(--spacing-sm);
+}
+
+.empty-state small {
+  color: white;
+}
+
+.memory-add-wrapper {
+  padding: 10px;
+  background: var(--primary-light);
+  border-radius: 0 0 12px 12px;
+}
+
+.memory-add {
+  display: flex;
+  gap: var(--spacing-md);
+}
+
+.memory-add textarea {
+  width: 100%;
+  padding: 15px;
+  border: none;
+  border-radius: var(--radius-md);
+  resize: none;
+  color: white;
+  background: var(--primary-lite);
+  transition: all var(--transition-base);
+}
+
+.memory-add textarea:hover {
+  box-shadow: var(--shadow-lg);
+  background: var(--primary-lite);
+}
+
+.memory-add textarea:focus {
+  box-shadow: var(--shadow-lg);
+  background: var(--primary-lite);
+}

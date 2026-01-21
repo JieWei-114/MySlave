@@ -2,12 +2,15 @@ import { Directive, ElementRef, OnDestroy, OnInit, Inject, PLATFORM_ID } from '@
 import { isPlatformBrowser } from '@angular/common';
 
 @Directive({
-  selector: '[appAutoScroll]'
+  selector: '[appAutoScroll]',
 })
 export class AutoScrollDirective implements OnInit, OnDestroy {
   private mo: MutationObserver | null = null;
 
-  constructor(private el: ElementRef<HTMLElement>, @Inject(PLATFORM_ID) private platformId: any) {}
+  constructor(
+    private el: ElementRef<HTMLElement>,
+    @Inject(PLATFORM_ID) private platformId: any,
+  ) {}
 
   ngOnInit(): void {
     if (!isPlatformBrowser(this.platformId)) return;

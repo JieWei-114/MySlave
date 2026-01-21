@@ -1,36 +1,175 @@
 .sidebar {
-  width: 220px;
-  border-right: 1px solid #ddd;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  background: var(--primary-dark);
+  border-radius: 10px;
+  gap: 10px;
+  height: 100%;
+}
+
+.collapse {
+  width: 100%;
   padding: 8px;
-  transition: width 0.3s ease;
+  border-radius: 4px;
+  background: var(--primary-dark);
+  cursor: pointer;
+  transition: all 0.2s;
+  color: white;
 }
 
-.sidebar.collapsed {
-  width: 48px;
-  overflow: hidden;
+.collapse:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
 }
 
-.memory {
-  width: 100%;
-  margin-bottom: 8px;
-}
-
+.memory,
 .new {
+  display: flex;
+  justify-content: left;
   width: 100%;
-  margin-bottom: 8px;
+  padding: 10px;
+  border-radius: 4px;
+  background: var(--primary-dark);
+  cursor: pointer;
+  font-size: 14px;
+  color: white;
+}
+
+.memory:hover,
+.new:hover,
+.collapse:hover,
+.session:hover {
+  background: var(--primary-light);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+  z-index: 1;
+}
+
+.memory.active {
+  background: var(--primary-light);
+  box-shadow: var(--shadow-md);
+  font-weight: 600;
+  color: white;
+}
+
+.session-container {
+  flex: 1;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  padding-right: 4px;
+  overflow-y: auto;
 }
 
 .session {
-  padding: 6px 8px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  margin-bottom: 8px;
   cursor: pointer;
-  border-radius: 4px;
+  border-radius: 6px;
+  background: var(--primary-dark);
+  color: white;
+  transition: background 0.2s;
 }
 
-.session:hover {
-  background: #f2f2f2;
+.session input {
+  width: 100%;
+  background: #444;
+  color: white;
+  padding: 2px 4px;
+  border-radius: 4px;
+  border: none;
 }
 
 .session.active {
-  background: #e0f0ff;
-  font-weight: bold;
+  background: var(--primary-light);
+  box-shadow: var(--shadow-md);
+  font-weight: 600;
+  color: white;
+}
+
+.session input:focus {
+  box-shadow: var(--shadow-sm);
+}
+
+.empty {
+  text-align: center;
+  padding: 24px;
+  color: #ffffff;
+}
+
+.cdk-drag-preview {
+  box-sizing: border-box;
+  border-radius: 6px;
+  box-shadow:
+    0 5px 5px -3px rgba(0, 0, 0, 0.2),
+    0 8px 10px 1px rgba(0, 0, 0, 0.14),
+    0 3px 14px 2px rgba(0, 0, 0, 0.12);
+  background: var(--primary-light);
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  color: white;
+}
+
+.cdk-drag-placeholder {
+  opacity: 0.3;
+}
+
+.cdk-drag-animating {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.session-container.cdk-drop-list-dragging .session:not(.cdk-drag-placeholder) {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.menu-container {
+  position: relative;
+}
+
+.menu-trigger {
+  background: transparent;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.menu-trigger:hover {
+  color: white;
+}
+
+.menu-dropdown {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  background: #333;
+  border: 1px solid #444;
+  border-radius: 4px;
+  min-width: 100px;
+  box-shadow: var(--shadow-lg);
+  z-index: 2;
+}
+
+.menu-dropdown button {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  text-align: left;
+  background: transparent;
+  border: none;
+  color: white;
+  cursor: pointer;
+}
+
+.menu-dropdown button:hover {
+  background: var(--primary-lite);
+}
+
+.menu-dropdown button.delete-opt {
+  color: red;
 }

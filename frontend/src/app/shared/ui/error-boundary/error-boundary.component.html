@@ -1,0 +1,12 @@
+<div class="error-overlay" *ngIf="error" (click)="close.emit()">
+  <div class="error-boundary" (click)="$event.stopPropagation()">
+    <div class="error-icon">!</div>
+    <h3 class="error-title">Something went wrong</h3>
+    <p class="error-message">{{ error }}</p>
+
+    <div class="button-group">
+      <button class="retry-button" (click)="retry.emit()" *ngIf="showRetry">Try Again</button>
+      <button class="close-button" (click)="close.emit()">Dismiss</button>
+    </div>
+  </div>
+</div>

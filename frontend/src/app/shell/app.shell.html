@@ -1,7 +1,10 @@
 <div class="layout">
   <app-sidebar
+    class="sidebar"
+    [class.collapsed]="sidebarCollapsed"
     [sessions]="store.visibleSessions()"
     [activeId]="store.currentSessionId()"
+    [showMemory]="showMemory"
     (newSession)="onNewChat()"
     (selectSession)="onSelectChat($event)"
     (deleteSession)="onDeleteChat($event)"
@@ -15,10 +18,11 @@
     <router-outlet />
   </main>
 
-  <!-- Memory Panel as Drawer -->
   <app-memory-panel
     *ngIf="showMemory"
     [sessionId]="store.currentSessionId()!"
+    (close)="showMemory = false"
     class="memory-drawer"
+    id="memory-panel"
   />
 </div>
