@@ -27,6 +27,10 @@ class Settings(BaseSettings):
     MONGO_MIN_POOL_SIZE: int = 10
     MONGO_SERVER_SELECTION_TIMEOUT_MS: int = 5000
 
+    # Web Search settings
+    SERPER_API_KEY: str | None = None
+    WEB_SEARCH_DAILY_LIMIT: int = 100
+
     class Config:
         env_file = '.env'
         case_sensitive = True

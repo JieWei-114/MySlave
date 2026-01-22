@@ -9,6 +9,14 @@
   </div>
 
   <div class="memory-list">
+    <div>
+      <input
+        type="text"
+        placeholder="Search memory..."
+        (input)="store.search($event.target.value)"
+      />
+      <button class="btn-compress" (click)="compress()">Compress memories</button>
+    </div>
     <div class="memory-item" *ngFor="let m of store.memories()" [class.disabled]="!m.enabled">
       <label class="memory-checkbox">
         <input type="checkbox" [checked]="m.enabled" (change)="store.toggle(m)" />
@@ -17,6 +25,7 @@
 
       <div class="memory-content">
         {{ m.content }}
+        <span class="tag" *ngIf="m.source === 'auto'">AUTO</span>
       </div>
 
       <button class="btn-delete" (click)="store.delete(m)" title="Delete memory">🗑</button>

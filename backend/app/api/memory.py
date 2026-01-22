@@ -6,6 +6,8 @@ from app.services.memory_service import (
     delete_memory,
     list_all_memories,
     set_memory_enabled,
+    search_memories,
+    compress_memories
 )
 
 router = APIRouter(prefix='/memory', tags=['memory'])
@@ -39,3 +41,18 @@ def remove_memory(memory_id: str):
         delete_memory(memory_id)
     except ValueError:
         raise HTTPException(status_code=400, detail='Invalid memory id')
+    
+@router.get('/search')
+def search(
+    chat_sessionId: str,
+    q: str,
+    limit: int = 5,
+):
+    return search_memories(chat_sessionId, q, limit)
+
+@router.post('/compress')
+async def compress(chat_sessionId: str, model: str):
+    result = await compress_memories(chat_sessionId, model)
+    return result or {'status': 'skipped'}
+
+

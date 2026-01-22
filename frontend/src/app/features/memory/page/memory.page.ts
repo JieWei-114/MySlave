@@ -37,4 +37,8 @@ export class MemoryPage {
     this.store.addManual(this.newMemory);
     this.newMemory = '';
   }
+  
+  compress() {
+    this.store.compress();
+  }
 }

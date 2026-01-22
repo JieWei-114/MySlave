@@ -5,6 +5,7 @@ from app.api.chat import router as chat_router
 from app.api.memory import router as memory_router
 from app.config.settings import settings
 from app.core.db import client
+from app.api.tools import router as tools_router
 
 app = FastAPI(title='My Slave', version='1.0.0')
 
@@ -16,8 +17,6 @@ app.add_middleware(
     allow_headers=['*'],
 )
 
-
-# Add this block to fix the 404 on the root URL
 @app.get('/')
 async def read_root():
     return {'message': 'Welcome to my API!'}
@@ -38,6 +37,6 @@ async def health_check():
         'version': '1.0.0',
     }
 
-
 app.include_router(chat_router)
 app.include_router(memory_router)
+app.include_router(tools_router)

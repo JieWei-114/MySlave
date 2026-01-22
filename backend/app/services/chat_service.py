@@ -9,6 +9,7 @@ from app.services.memory_service import (
     delete_memories_for_session,
     list_enabled_memories,
 )
+from app.services.memory_service import search_memories
 
 
 def create_session(title: str) -> dict:
@@ -129,7 +130,8 @@ def build_prompt_with_memory(user_content: str, chat_sessionId: str = 'default')
     Build final prompt with persistent memories + user input
     """
 
-    memories = list_enabled_memories(chat_sessionId)
+    # memories = list_enabled_memories(chat_sessionId)
+    memories = search_memories(chat_sessionId, user_content, limit=5)
 
     if not memories:
         return user_content

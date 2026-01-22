@@ -11,6 +11,7 @@ export class MemoryStore {
   error = signal('');
 
   private memoryApi = inject(MemoryApi);
+  private chatStore = inject(ChatStore);
 
   readonly currentSessionId = signal<string | null>(null);
 
@@ -61,6 +62,28 @@ export class MemoryStore {
   delete(m: Memory) {
     this.memoryApi.delete(m.id).subscribe(() => {
       this.memories.update((list) => list.filter((x) => x.id !== m.id));
+    });
+  }
+
+  search(q: string) {
+    const sessionId = this.currentSessionId();
+    if (!sessionId) return;
+
+    this.memoryApi.search(sessionId, q).subscribe((res) => {
+      this.memories.set(res);
+    });
+  }
+
+  compress() {
+    const sessionId = this.currentSessionId();
+    if (!sessionId) return;
+
+    const model = this.chatStore.currentModel().id;
+
+    this.memoryApi.compress(sessionId, model).subscribe((m: any) => {
+      if (m?.id) {
+        this.memories.update((list) => [...list, m]);
+      }
     });
   }
 }

@@ -21,3 +21,12 @@ async def stream_ollama(prompt: str, model: str):
 
                 if data.get('done'):
                     break
+
+async def call_ollama_once(prompt: str, model: str) -> str:
+    async with httpx.AsyncClient(timeout=settings.OLLAMA_TIMEOUT) as client:
+        resp = await client.post(
+            settings.OLLAMA_URL,
+            json={'model': model, 'prompt': prompt, 'stream': False},
+        )
+        return resp.json().get('response', '').strip()
+

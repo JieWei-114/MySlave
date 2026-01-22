@@ -18,6 +18,8 @@ from app.services.chat_service import (
     rename_session,
 )
 from app.services.ollama_service import stream_ollama
+from app.services.memory_service import auto_memory_if_needed
+
 
 router = APIRouter(prefix='/chat', tags=['chat'])
 
@@ -61,6 +63,13 @@ async def stream_message(session_id: str, content: str, model: str):
         async for token in stream_ollama(prompt, model=model):
             assistant_text += token
             yield f'data: {quote(token)}\n\n'
+
+            await auto_memory_if_needed(
+                chat_sessionId=session_id,
+                user_text=content,
+                assistant_text=assistant_text,
+                model=model,
+            )
 
         add_message(session_id, 'assistant', assistant_text)
         yield 'event: done\ndata: end\n\n'
