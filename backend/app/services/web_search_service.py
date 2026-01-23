@@ -48,3 +48,9 @@ async def web_search(query: str, limit: int = 5):
         }
         for x in data
     ]
+
+async def maybe_web_search(query: str) -> list[dict]:
+    keywords = ['latest', 'today', 'news', 'price', 'who is', 'what is']
+    if any(k in query.lower() for k in keywords):
+        return await web_search(query)
+    return []

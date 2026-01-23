@@ -1,0 +1,12 @@
+<div>
+  <input [(ngModel)]="q" placeholder="Search the web..." />
+  <button (click)="search()">Search</button>
+
+  <div *ngFor="let r of results">
+    <b>{{ r.title }}</b>
+    <p>{{ r.snippet }}</p>
+    <button (click)="insert(r)">Insert</button>
+  </div>
+
+  <small>Remaining: {{ remaining }}</small>
+</div>

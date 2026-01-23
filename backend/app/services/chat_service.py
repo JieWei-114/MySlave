@@ -10,6 +10,7 @@ from app.services.memory_service import (
     list_enabled_memories,
 )
 from app.services.memory_service import search_memories
+from app.services.web_search_service import maybe_web_search
 
 
 def create_session(title: str) -> dict:
@@ -133,19 +134,28 @@ def build_prompt_with_memory(user_content: str, chat_sessionId: str = 'default')
     # memories = list_enabled_memories(chat_sessionId)
     memories = search_memories(chat_sessionId, user_content, limit=5)
 
+    web_results = maybe_web_search(user_content)
+
     if not memories:
         return user_content
 
     memory_block = '\n'.join(f'- {m["content"]}' for m in memories)
 
+    web_block = '\n'.join(
+       f'- {r["title"]}: {r["snippet"]}' for r in web_results
+    )
+
     prompt = f"""You are an assistant.
 
-The following are persistent memories about the user.
-{memory_block}
+    The following are persistent memories about the user.
+    {memory_block}
 
-Conversation:
-User: {user_content}
-"""
+    Web search results:
+    {web_block}
+
+    Conversation:
+    User: {user_content}
+    """
 
     print('FINAL PROMPT:\n', prompt)
 

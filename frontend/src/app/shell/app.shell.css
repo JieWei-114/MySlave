@@ -31,6 +31,7 @@
   background: var(--primary-color);
   padding: 10px 5px;
   min-width: 320px;
+  max-width: 650px;
   animation: slideInRight 0.3s ease forwards;
 }
 
