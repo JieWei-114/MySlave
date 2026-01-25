@@ -18,8 +18,12 @@ export class ChatMessageBubbleComponent {
   constructor(public store: MemoryStore) {}
 
   remember(): void {
-    this.store.rememberMessage(this.message);
+    if (this.message.remembered) return;
+
+    this.store.addManual(this.message.content);
+    this.message.remembered = true;
   }
+
   get isUser(): boolean {
     return this.message.role === 'user';
   }

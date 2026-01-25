@@ -12,18 +12,20 @@ import { isPlatformBrowser } from '@angular/common';
 import { SidebarComponent } from '../shared/ui/sidebar/sidebar.component';
 import { ChatStore } from '../features/chat/store/chat.store';
 import { MemoryPage } from '../features/memory/page/memory.page';
+import { WebSearchComponent } from '../features/tools/page/web/web-search.component';
 import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, SidebarComponent, MemoryPage, CommonModule],
+  imports: [RouterOutlet, SidebarComponent, MemoryPage, CommonModule, WebSearchComponent],
   templateUrl: './app.shell.html',
   styleUrls: ['./app.shell.css'],
 })
 export class AppShell implements AfterViewInit {
   showMemory = false;
   sidebarCollapsed = false;
+  showWeb = false;
   private isResizing = false;
   private startX = 0;
   private startWidth = 0;
@@ -110,5 +112,8 @@ export class AppShell implements AfterViewInit {
   }
   toggleSidebar() {
     this.sidebarCollapsed = !this.sidebarCollapsed;
+  }
+  toggleWeb() {
+    this.showWeb = !this.showWeb;
   }
 }

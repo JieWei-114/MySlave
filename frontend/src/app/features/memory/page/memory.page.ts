@@ -2,6 +2,7 @@ import { Component, Input, OnInit, effect, signal, Output, EventEmitter } from '
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { MemoryStore } from '../store/memory.store';
+import { ChatStore } from '../../chat/store/chat.store';
 import { AppButtonComponent } from '../../../shared/ui/button/app-button.component';
 @Component({
   selector: 'app-memory-panel',
@@ -12,6 +13,7 @@ import { AppButtonComponent } from '../../../shared/ui/button/app-button.compone
 })
 export class MemoryPage {
   private _sessionId = signal<string | null>(null);
+  private searchTimer: any;
 
   @Input({ required: true })
   set sessionId(value: string) {
@@ -22,7 +24,7 @@ export class MemoryPage {
 
   newMemory = '';
 
-  constructor(public store: MemoryStore) {
+  constructor(public store: MemoryStore, public chatStore: ChatStore,) {
     effect(() => {
       const id = this._sessionId();
       if (!id) return;
@@ -39,6 +41,16 @@ export class MemoryPage {
   }
   
   compress() {
-    this.store.compress();
+    this.store.compress(this.chatStore.currentModel().id);
+  }
+
+  onSearch(q: string) {
+    clearTimeout(this.searchTimer);
+
+    if (q.trim().length < 2) return;
+
+    this.searchTimer = setTimeout(() => {
+      this.store.search(q);
+    }, 300);
   }
 }

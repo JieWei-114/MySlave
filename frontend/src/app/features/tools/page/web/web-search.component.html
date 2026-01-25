@@ -1,4 +1,7 @@
 <div>
+  <h3>Web Search</h3>
+  <button class="close" (click)="close.emit()">✕</button>
+  
   <input [(ngModel)]="q" placeholder="Search the web..." />
   <button (click)="search()">Search</button>
 

@@ -10,8 +10,7 @@ from app.services.memory_service import (
     list_enabled_memories,
 )
 from app.services.memory_service import search_memories
-from app.services.web_search_service import maybe_web_search
-
+from app.services.web_search_service import maybe_web_search, maybe_extract
 
 def create_session(title: str) -> dict:
     now = datetime.utcnow()
@@ -126,32 +125,44 @@ def stream_chat_reply(session_id: str, content: str) -> Generator[str, None, Non
     yield 'event: done\ndata: [DONE]\n\n'
 
 
-def build_prompt_with_memory(user_content: str, chat_sessionId: str = 'default') -> str:
+async def build_prompt_with_memory(user_content: str, chat_sessionId: str = 'default') -> str:
     """
-    Build final prompt with persistent memories + user input
+    Build final prompt with persistent memories + web search + user input
     """
 
     # memories = list_enabled_memories(chat_sessionId)
-    memories = search_memories(chat_sessionId, user_content, limit=5)
+    memories = search_memories(chat_sessionId, user_content, limit=10)
+    web_results = await maybe_web_search(user_content)
+    extracted = await maybe_extract(user_content)
 
-    web_results = maybe_web_search(user_content)
+    blocks = []
 
-    if not memories:
-        return user_content
+    if memories:
+        blocks.append(
+            "[MEMORY]\n"
+            + "\n".join(f"- {m['content']}" for m in memories)
+        )
 
-    memory_block = '\n'.join(f'- {m["content"]}' for m in memories)
+    if web_results:
+        blocks.append(
+            "[WEB SEARCH]\n"
+            + "\n".join(
+                f"- ({r['source']}) {r['title']}: {r['snippet']}"
+                for r in web_results
+            )
+        )
 
-    web_block = '\n'.join(
-       f'- {r["title"]}: {r["snippet"]}' for r in web_results
-    )
+    if extracted:
+        blocks.append("[WEB EXTRACT]\n" + extracted[:4000])
+
+    context = "\n\n".join(blocks)
+
+    # if not memories:
+    #     return user_content
 
     prompt = f"""You are an assistant.
 
-    The following are persistent memories about the user.
-    {memory_block}
-
-    Web search results:
-    {web_block}
+    {context}
 
     Conversation:
     User: {user_content}

@@ -1,12 +1,6 @@
-"""
-Application Settings and Configuration
-Uses pydantic-settings for environment variable management
-"""
-
 from typing import Optional
 
 from pydantic_settings import BaseSettings
-
 
 class Settings(BaseSettings):
     """Application configuration loaded from environment variables"""
@@ -29,7 +23,12 @@ class Settings(BaseSettings):
 
     # Web Search settings
     SERPER_API_KEY: str | None = None
-    WEB_SEARCH_DAILY_LIMIT: int = 100
+    SERPER_TOTAL_LIMIT: int = 2500
+
+    TAVILY_API_KEY: Optional[str] = None # tvly-xxxx
+    TAVILY_MONTHLY_LIMIT: int = 1000
+
+    SEARXNG_URL: Optional[str] = None  # e.g. http://localhost:8080
 
     class Config:
         env_file = '.env'

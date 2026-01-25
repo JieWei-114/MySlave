@@ -14,6 +14,7 @@ def serialize_memory(doc: dict) -> dict:
         'enabled': doc['enabled'],
         'created_at': doc['created_at'],
         'chat_sessionId': doc['chat_sessionId'],
+        'source': doc.get('source', 'manual'),
     }
 
 
@@ -81,6 +82,7 @@ def search_memories(chat_sessionId: str, query: str, limit: int = 5):
 
     return [serialize_memory(d[1]) for d in scored[:limit]]
 
+
 async def compress_memories(chat_sessionId: str, model: str):
     memories = list_enabled_memories(chat_sessionId)
 
@@ -106,10 +108,22 @@ Memories:
         source='compress',
     )
 
-MIN_LEN = 10
+def should_remember(user_text: str, assistant_text: str) -> bool:
+    if len(assistant_text.strip()) < 50:
+        return False
 
-def should_remember(text: str) -> bool:
-    return len(text) >= MIN_LEN
+    rejectWord = ['hello']
+    if assistant_text.lower().strip() in  rejectWord:
+        return False
+
+    if len(user_text) + len(assistant_text) < 100:
+        return False
+    
+    acceptWord = ['Remember']
+    if assistant_text.lower().strip() in  acceptWord:
+        return True
+
+    return True
 
 async def summarize(text: str, model: str) -> str:
     prompt = f"""
@@ -127,10 +141,13 @@ async def auto_memory_if_needed(
     assistant_text: str,
     model: str,
 ):
-    combined = f"User: {user_text}\nAssistant: {assistant_text}"
-
-    if not should_remember(combined):
+    if not should_remember(user_text, assistant_text):
+        print('Auto Memory PASSED')
         return None
+    
+    print('Auto Memory TRIGGERED')
+    
+    combined = f"User: {user_text}\nAssistant: {assistant_text}"
 
     summary = await summarize(combined, model)
 

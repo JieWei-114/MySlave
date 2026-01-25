@@ -1,27 +1,33 @@
-import { Component } from '@angular/core';
+import { Component, Output, EventEmitter } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
 import { ChatStore } from '../../../chat/store/chat.store';
 import { ToolsApi } from '../../service/tools.api';
+
 
 @Component({
   selector: 'app-web-search',
   standalone: true,
+  imports: [FormsModule, CommonModule],
   templateUrl: './web-search.component.html',
   styleUrls: ['./web-search.component.css'],
 })
 export class WebSearchComponent {
   q = '';
   results: any[] = [];
-  remaining = 0;
+  quotas  = 0;
 
   constructor(
     private api: ToolsApi,
     private chatStore: ChatStore,
   ) {}
 
+  @Output() close = new EventEmitter<void>();
+
   search() {
     this.api.webSearch(this.q).subscribe((res) => {
       this.results = res.results;
-      this.remaining = res.remaining;
+      this.quotas = res.quotas;
     });
   }
 

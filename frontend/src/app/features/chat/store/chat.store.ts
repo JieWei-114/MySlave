@@ -10,13 +10,14 @@ import {
   DEFAULT_MODEL,
   AIModel,
 } from '../services/chat.model';
-import { MemoryApi } from '../../memory/service/memory.api';
+import { MemoryStore } from '../../memory/store/memory.store';
 
 @Injectable({ providedIn: 'root' })
 export class ChatStore {
   private chatApi = inject(ChatApi);
   private platformId = inject(PLATFORM_ID);
-  private memoryApi = inject(MemoryApi);
+  private memoryStore = inject(MemoryStore);
+
   private isBrowser = isPlatformBrowser(this.platformId);
 
   /** ============================
@@ -277,6 +278,8 @@ export class ChatStore {
         () => {
           this.loading.set(false);
           this.stopStreaming = null;
+
+          this.memoryStore.reload(sessionId);
         },
       );
     };

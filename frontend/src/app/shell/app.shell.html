@@ -5,12 +5,14 @@
     [sessions]="store.visibleSessions()"
     [activeId]="store.currentSessionId()"
     [showMemory]="showMemory"
+    [showWeb]="showWeb"
     (newSession)="onNewChat()"
     (selectSession)="onSelectChat($event)"
     (deleteSession)="onDeleteChat($event)"
     (renameSession)="onRenameChat($event)"
     (toggleMemory)="toggleMemory()"
     (toggleSidebar)="toggleSidebar()"
+    (toggleWeb)="toggleWeb()"
     [collapsed]="sidebarCollapsed"
   />
 
@@ -25,4 +27,6 @@
     class="memory-drawer"
     id="memory-panel"
   />
+
+  <app-web-search *ngIf="showWeb" (close)="showWeb = false" />
 </div>

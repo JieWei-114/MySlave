@@ -55,7 +55,7 @@ async def stream_message(session_id: str, content: str, model: str):
         raise HTTPException(status_code=404, detail='Session not found')
 
     # build prompt with memory
-    prompt = build_prompt_with_memory(content, chat_sessionId=session_id)
+    prompt = await build_prompt_with_memory(content, chat_sessionId=session_id)
 
     async def event_generator():
         assistant_text = ''
@@ -64,14 +64,15 @@ async def stream_message(session_id: str, content: str, model: str):
             assistant_text += token
             yield f'data: {quote(token)}\n\n'
 
-            await auto_memory_if_needed(
-                chat_sessionId=session_id,
-                user_text=content,
-                assistant_text=assistant_text,
-                model=model,
-            )
-
         add_message(session_id, 'assistant', assistant_text)
+
+        await auto_memory_if_needed(
+            chat_sessionId=session_id,
+            user_text=content,
+            assistant_text=assistant_text,
+            model=model,
+        )
+
         yield 'event: done\ndata: end\n\n'
 
     return StreamingResponse(event_generator(), media_type='text/event-stream')

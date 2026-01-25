@@ -34,7 +34,7 @@ export class MemoryApi {
 
   search(chatSessionId: string, q: string) {
     return this.http.get<any[]>(
-      `${this.config.apiBaseUrl}/memory/search?chatSessionId=${chatSessionId}&q=${encodeURIComponent(q)}`
+      `${this.config.apiBaseUrl}/memory/search?chat_sessionId=${chatSessionId}&q=${encodeURIComponent(q)}`
     );
   }
 

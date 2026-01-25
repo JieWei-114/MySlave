@@ -16,8 +16,10 @@ export class SidebarComponent {
   @Input({ required: true }) activeId!: string | null;
   @Input() collapsed = false;
   @Input() showMemory = false;
+  @Input() showWeb = false;
 
   @Output() toggleMemory = new EventEmitter<void>();
+  @Output() toggleWeb = new EventEmitter<void>();
   @Output() toggleSidebar = new EventEmitter<void>();
 
   @Output() newSession = new EventEmitter<void>();

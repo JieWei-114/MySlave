@@ -1,21 +1,20 @@
 import { Injectable, signal, inject } from '@angular/core';
 import { MemoryApi } from '../service/memory.api';
 import { Memory } from '../service/memory.model';
-import { ChatMessage } from '../../chat/services/chat.model';
-import { ChatStore } from '../../chat/store/chat.store';
 
 @Injectable({ providedIn: 'root' })
 export class MemoryStore {
   memories = signal<Memory[]>([]);
   loading = signal(false);
   error = signal('');
+  compressing = signal(false);
 
   private memoryApi = inject(MemoryApi);
-  private chatStore = inject(ChatStore);
+  private sessionId: string | null = null;
 
   readonly currentSessionId = signal<string | null>(null);
 
-  private saveMemory(content: string): void {
+  addManual(content: string): void {
     const sessionId = this.currentSessionId();
     if (!sessionId) return;
 
@@ -27,16 +26,6 @@ export class MemoryStore {
         this.error.set('Failed to save memory');
       },
     });
-  }
-
-  rememberMessage(message: ChatMessage): void {
-    if (message.remembered) return;
-    this.saveMemory(message.content);
-    message.remembered = true;
-  }
-
-  addManual(content: string): void {
-    this.saveMemory(content);
   }
 
   load(sessionId: string) {
@@ -74,16 +63,39 @@ export class MemoryStore {
     });
   }
 
-  compress() {
+  compress(model: string) {
     const sessionId = this.currentSessionId();
-    if (!sessionId) return;
+    if (!sessionId || this.compressing()) return;
 
-    const model = this.chatStore.currentModel().id;
+    this.compressing.set(true);
 
-    this.memoryApi.compress(sessionId, model).subscribe((m: any) => {
-      if (m?.id) {
-        this.memories.update((list) => [...list, m]);
-      }
+    this.memoryApi.compress(sessionId, model).subscribe({
+      next: (m: any) => {
+        if (m?.id) {
+          this.memories.update((list) => [...list, m]);
+        }
+      },
+      complete: () => this.compressing.set(false),
+      error: () => this.compressing.set(false),
+    });
+  }
+
+  setSession(sessionId: string) {
+    this.sessionId = sessionId;
+    this.reload(sessionId);
+  }
+
+  reload(sessionId: string) {
+    this.loading.set(true);
+
+    this.memoryApi.getMemories(sessionId).subscribe({
+      next: (m) => {
+        this.memories.set(m);
+        this.loading.set(false);
+      },
+      error: () => {
+        this.loading.set(false);
+      },
     });
   }
 }
