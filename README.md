@@ -1,4 +1,4 @@
-# MySlave – Local AI Chat System
+# MySlave – Local AI Chat System (Still in progress)
 
 A fully local, end-to-end chat application built with **Angular + FastAPI + MongoDB**, supporting:
 
