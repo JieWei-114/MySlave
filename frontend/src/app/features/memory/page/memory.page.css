@@ -8,6 +8,12 @@
   overflow: hidden;
 }
 
+.memory-body {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
 .resize-handle {
   position: absolute;
   top: 0;
@@ -44,6 +50,35 @@
   padding: 10px;
 }
 
+.tab-group {
+  display: flex;
+  gap: 10px;
+}
+
+.tab {
+  background: var(--primary-lite);
+  color: white;
+  border: 1px solid var(--primary-dark);
+  border-radius: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tab.active {
+  background: var(--primary-dark);
+  border-color: var(--accent-color, var(--primary-lite));
+  box-shadow: var(--shadow-lg);
+}
+
+.tab .count {
+  color: var(--gray-300);
+  font-size: 12px;
+}
+
 .close-btn {
   padding: 10px 15px;
   border-radius: var(--radius-md);
@@ -78,6 +113,12 @@
   overflow-y: auto;
   gap: var(--spacing-sm);
   background-color: var(--primary-dark);
+}
+
+.memory-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
 }
 
 .memory-item {
@@ -224,4 +265,15 @@
 .memory-add textarea:focus {
   box-shadow: var(--shadow-lg);
   background: var(--primary-lite);
+}
+
+.web-panel {
+  flex: 1;
+  padding: 12px;
+  background: var(--primary-dark);
+}
+
+.web-panel app-web-search {
+  display: block;
+  height: 100%;
 }

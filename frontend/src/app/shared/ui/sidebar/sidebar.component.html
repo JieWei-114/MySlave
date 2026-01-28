@@ -5,8 +5,7 @@
 
   <ng-container *ngIf="!collapsed">
     <button class="new" (click)="newSession.emit()">New Chat</button>
-    <button class="memory" [class.active]="showMemory" (click)="toggleMemory.emit()">Memory</button>
-    <button class="web" [class.active]="showWeb" (click)="toggleWeb.emit()">Web Search</button>
+    <button class="memory" [class.active]="showTools" (click)="toggleTools.emit()">Tools</button>
 
     <div class="session-container" cdkDropList (cdkDropListDropped)="onDrop($event)">
       <ng-container *ngIf="sessions.length; else empty">

@@ -26,3 +26,5 @@ except ConnectionFailure as e:
 
 sessions_collection = db['sessions']
 memories_collection = db['memories']
+serper_quota_collection = db['serper_quota']
+tavily_quota_collection = db['tavily_quota']

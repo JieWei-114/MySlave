@@ -40,10 +40,17 @@ export class ChatPage implements OnInit {
   private http = inject(HttpClient);
   private config = inject(AppConfigService);
 
-  message = '';
   models = signal<AIModel[]>(AVAILABLE_MODELS);
   isDropdownOpen = false;
   isErrorDismissed = signal(false);
+
+  get message(): string {
+    return this.store.draftMessage();
+  }
+
+  set message(value: string) {
+    this.store.setDraftMessage(value);
+  }
 
   constructor(
     public store: ChatStore,
@@ -73,8 +80,11 @@ export class ChatPage implements OnInit {
 
   send(): void {
     this.isErrorDismissed.set(false);
-    this.store.sendMessage(this.message);
-    this.message = '';
+    const content = this.store.draftMessage().trim();
+    if (!content) return;
+
+    this.store.sendMessage(content);
+    this.store.clearDraft();
   }
 
   onModelChange(modelId: string): void {
@@ -90,9 +100,11 @@ export class ChatPage implements OnInit {
       this.send();
     }
   }
+  
   get isTyping(): boolean {
-    return !!this.message.trim() && !this.store.loading();
+    return !!this.store.draftMessage().trim() && !this.store.loading();
   }
+
   onScroll(e: Event) {
     const el = e.target as HTMLElement;
     if (el.scrollTop < 20) {

@@ -1,19 +1,22 @@
-import { Component, Input, OnInit, effect, signal, Output, EventEmitter } from '@angular/core';
+import { Component, Input, effect, signal, Output, EventEmitter } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { MemoryStore } from '../store/memory.store';
 import { ChatStore } from '../../chat/store/chat.store';
 import { AppButtonComponent } from '../../../shared/ui/button/app-button.component';
+import { WebSearchComponent } from '../../tools/page/web/web-search.component';
+
 @Component({
   selector: 'app-memory-panel',
   standalone: true,
-  imports: [FormsModule, CommonModule, AppButtonComponent],
+  imports: [FormsModule, CommonModule, AppButtonComponent, WebSearchComponent],
   templateUrl: './memory.page.html',
   styleUrls: ['./memory.page.css'],
 })
 export class MemoryPage {
   private _sessionId = signal<string | null>(null);
   private searchTimer: any;
+  activeTool: 'memory' | 'web' = 'memory';
 
   @Input({ required: true })
   set sessionId(value: string) {
@@ -24,7 +27,10 @@ export class MemoryPage {
 
   newMemory = '';
 
-  constructor(public store: MemoryStore, public chatStore: ChatStore,) {
+  constructor(
+    public store: MemoryStore,
+    public chatStore: ChatStore,
+  ) {
     effect(() => {
       const id = this._sessionId();
       if (!id) return;
@@ -39,7 +45,7 @@ export class MemoryPage {
     this.store.addManual(this.newMemory);
     this.newMemory = '';
   }
-  
+
   compress() {
     this.store.compress(this.chatStore.currentModel().id);
   }
@@ -52,5 +58,9 @@ export class MemoryPage {
     this.searchTimer = setTimeout(() => {
       this.store.search(q);
     }, 300);
+  }
+
+  switchTool(tool: 'memory' | 'web') {
+    this.activeTool = tool;
   }
 }

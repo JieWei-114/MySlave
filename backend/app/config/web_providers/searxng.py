@@ -1,4 +1,5 @@
 import httpx
+from typing import Any
 
 from app.config.settings import settings
 from app.config.web_providers.base import WebSearchProvider
@@ -6,24 +7,37 @@ from app.config.web_providers.base import WebSearchProvider
 class SearXNGProvider(WebSearchProvider):
     name = "searxng"
 
-    async def search(self, query: str, limit: int = 5):
-        async with httpx.AsyncClient() as client:
-            res = await client.get(
-                f"{settings.SEARXNG_URL}/search",
-                params={
-                    "q": query,
-                    "format": "json",
-                    "language": "en",
-                },
-            )
+    async def search(self, query: str, limit: int = 5) -> list[dict[str, Any]]:
+        if not settings.SEARXNG_URL:
+            return []
+
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        }
+        timeout = httpx.Timeout(10.0)
+
+        try:
+            async with httpx.AsyncClient(headers=headers, timeout=timeout) as client:
+                res = await client.get(
+                    f"{settings.SEARXNG_URL}/search",
+                    params={
+                        "q": query,
+                        "format": "json",
+                        "language": "en",
+                    },
+                )
+                res.raise_for_status()
+        except (httpx.HTTPError, httpx.TimeoutException):
+            return []
 
         data = res.json().get("results", [])
         return [
             {
-                "title": r["title"],
+                "title": r.get("title", ""),
                 "snippet": r.get("content", ""),
-                "link": r["url"],
+                "link": r.get("url", ""),
                 "source": "searxng",
             }
             for r in data[:limit]
+            if r.get("url")
         ]

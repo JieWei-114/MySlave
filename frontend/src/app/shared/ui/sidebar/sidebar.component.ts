@@ -15,11 +15,9 @@ export class SidebarComponent {
   @Input({ required: true }) sessions!: ChatSession[];
   @Input({ required: true }) activeId!: string | null;
   @Input() collapsed = false;
-  @Input() showMemory = false;
-  @Input() showWeb = false;
+  @Input() showTools = false;
 
-  @Output() toggleMemory = new EventEmitter<void>();
-  @Output() toggleWeb = new EventEmitter<void>();
+  @Output() toggleTools = new EventEmitter<void>();
   @Output() toggleSidebar = new EventEmitter<void>();
 
   @Output() newSession = new EventEmitter<void>();

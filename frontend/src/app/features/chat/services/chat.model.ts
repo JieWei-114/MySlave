@@ -15,6 +15,12 @@ export interface ChatSession {
   loadingMore?: boolean;
 }
 
+export interface ChatSessionDto {
+  id: string;
+  title: string;
+  updated_at: string;
+}
+
 export interface AIModel {
   id: string;
   name: string;

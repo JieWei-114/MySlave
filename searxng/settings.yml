@@ -13,4 +13,7 @@ ui:
   static_use_hash: true
 
 
-## docker compose up -d
+# docker compose up -d
+# In settings.yml set a strong secret: server.secret_key: "<random 32-64 chars>" (don’t leave the placeholder).
+# If you only need local access, change bind_address to 127.0.0.1 (optional but safer).
+# Optional: set search.safe_search: 1 (moderate) if you want filtering.

@@ -1,15 +1,37 @@
-<div>
-  <h3>Web Search</h3>
-  <button class="close" (click)="close.emit()">✕</button>
-  
-  <input [(ngModel)]="q" placeholder="Search the web..." />
-  <button (click)="search()">Search</button>
-
-  <div *ngFor="let r of results">
-    <b>{{ r.title }}</b>
-    <p>{{ r.snippet }}</p>
-    <button (click)="insert(r)">Insert</button>
+<div class="web-search">
+  <div class="web-search__header">
+    <h3>Web Search</h3>
+    <button class="close" (click)="close.emit()" title="Close web search">✕</button>
   </div>
 
-  <small>Remaining: {{ remaining }}</small>
+  <div class="web-search__controls">
+    <input [(ngModel)]="q" placeholder="Search the web..." (keydown.enter)="search()" />
+    <div class="control-row">
+      <button (click)="search()" [disabled]="loading || !q.trim()">
+        {{ loading ? 'Searching…' : 'Search' }}
+      </button>
+    </div>
+  </div>
+
+  <div class="quota-info" *ngIf="quotas">
+    <div class="quota-item">
+      <span class="quota-label">Serper:</span>
+      <span class="quota-value">{{ quotas.serper_remaining }}/2500</span>
+      <span class="quota-note">(no renewal)</span>
+    </div>
+    <div class="quota-item">
+      <span class="quota-label">Tavily:</span>
+      <span class="quota-value">{{ quotas.tavily_remaining }}/1000</span>
+      <span class="quota-note">(monthly)</span>
+    </div>
+  </div>
+
+  <div class="web-search__status" *ngIf="loading">Loading fresh results…</div>
+  <div class="web-search__status" *ngIf="!loading && !results.length">No results yet</div>
+
+  <div class="result" *ngFor="let r of results">
+    <b>{{ r.title }}</b>
+    <p>{{ r.snippet }}</p>
+    <button (click)="insert(r)">Insert into chat</button>
+  </div>
 </div>

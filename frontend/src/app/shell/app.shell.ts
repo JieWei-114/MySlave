@@ -1,31 +1,29 @@
 import {
   Component,
-  HostListener,
   ElementRef,
-  ViewChild,
   AfterViewInit,
   Inject,
   PLATFORM_ID,
+  ViewChild,
+  HostListener
 } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
 import { isPlatformBrowser } from '@angular/common';
 import { SidebarComponent } from '../shared/ui/sidebar/sidebar.component';
 import { ChatStore } from '../features/chat/store/chat.store';
 import { MemoryPage } from '../features/memory/page/memory.page';
-import { WebSearchComponent } from '../features/tools/page/web/web-search.component';
 import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, SidebarComponent, MemoryPage, CommonModule, WebSearchComponent],
+  imports: [RouterOutlet, SidebarComponent, MemoryPage, CommonModule],
   templateUrl: './app.shell.html',
   styleUrls: ['./app.shell.css'],
 })
 export class AppShell implements AfterViewInit {
-  showMemory = false;
+  showTools = false;
   sidebarCollapsed = false;
-  showWeb = false;
   private isResizing = false;
   private startX = 0;
   private startWidth = 0;
@@ -107,13 +105,10 @@ export class AppShell implements AfterViewInit {
   onRenameChat({ id, title }: { id: string; title: string }) {
     this.store.renameSession(id, title);
   }
-  toggleMemory() {
-    this.showMemory = !this.showMemory;
+  toggleTools() {
+    this.showTools = !this.showTools;
   }
   toggleSidebar() {
     this.sidebarCollapsed = !this.sidebarCollapsed;
-  }
-  toggleWeb() {
-    this.showWeb = !this.showWeb;
   }
 }

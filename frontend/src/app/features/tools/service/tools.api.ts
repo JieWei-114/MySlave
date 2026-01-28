@@ -1,14 +1,21 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
 import { AppConfigService } from '../../../core/services/app-config.services';
+import { QuotaInfo, WebSearchResponse } from './tools.model';
 
 @Injectable({ providedIn: 'root' })
 export class ToolsApi {
-  constructor(private http: HttpClient, private config: AppConfigService) {}
+  private http = inject(HttpClient);
+  private config = inject(AppConfigService);
 
-  webSearch(q: string) {
-    return this.http.get<any>(
-      `${this.config.apiBaseUrl}/tools/web-search?q=${encodeURIComponent(q)}`
+  webSearch(q: string): Observable<WebSearchResponse> {
+    return this.http.get<WebSearchResponse>(
+      `${this.config.apiBaseUrl}/tools/web-search?q=${encodeURIComponent(q)}`,
     );
+  }
+
+  getQuotas(): Observable<QuotaInfo> {
+    return this.http.get<QuotaInfo>(`${this.config.apiBaseUrl}/tools/quotas`);
   }
 }

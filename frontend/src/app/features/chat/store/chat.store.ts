@@ -1,4 +1,4 @@
-import { Injectable, signal, computed, effect, inject } from '@angular/core';
+import { Injectable, signal, computed, inject, effect } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { PLATFORM_ID } from '@angular/core';
 
@@ -32,6 +32,7 @@ export class ChatStore {
 
   readonly currentModel = signal<AIModel>(DEFAULT_MODEL);
   readonly availableModels = signal<AIModel[]>(AVAILABLE_MODELS);
+  readonly draftMessage = signal('');
 
   /** ============================
    *  Derived
@@ -54,7 +55,10 @@ export class ChatStore {
 
   readonly canSendMessage = computed(() => !this.loading() && this.currentSessionId() !== null);
 
-  /** Sidebar */
+    /** ============================
+   *  Sidebar
+   *  ============================ */
+
   readonly visibleSessions = computed(() => {
     const active = this.currentSessionId();
 
@@ -62,6 +66,24 @@ export class ChatStore {
       (s) => s.id === active || s.messages.length > 0 || s.title !== 'New chat',
     );
   });
+
+  /** ============================
+   *  Draft handling
+   *  ============================ */
+
+  setDraftMessage(message: string): void {
+    this.draftMessage.set(message);
+  }
+
+  appendToDraft(message: string): void {
+    const current = this.draftMessage();
+    const separator = current.trim().length ? '\n' : '';
+    this.draftMessage.set(`${current}${separator}${message}`);
+  }
+
+  clearDraft(): void {
+    this.draftMessage.set('');
+  }
 
   /** ============================
    *  Model Selection
@@ -320,30 +342,6 @@ export class ChatStore {
   }
 
   /** ============================
-   *  Helpers
-   *  ============================ */
-
-  private pushUserMessage(id: string, content: string) {
-    this.sessions.update((s) => ({
-      ...s,
-      [id]: {
-        ...s[id],
-        messages: [...s[id].messages, this.createMessage('user', content)],
-      },
-    }));
-  }
-
-  private pushAssistantMessage(id: string, content: string) {
-    this.sessions.update((s) => ({
-      ...s,
-      [id]: {
-        ...s[id],
-        messages: [...s[id].messages, this.createMessage('assistant', content)],
-      },
-    }));
-  }
-
-  /** ============================
    *  state
    *  ============================ */
 
@@ -424,5 +422,30 @@ export class ChatStore {
         }));
       },
     });
+  }
+
+  
+  /** ============================
+   *  Helpers
+   *  ============================ */
+
+  private pushUserMessage(id: string, content: string) {
+    this.sessions.update((s) => ({
+      ...s,
+      [id]: {
+        ...s[id],
+        messages: [...s[id].messages, this.createMessage('user', content)],
+      },
+    }));
+  }
+
+  private pushAssistantMessage(id: string, content: string) {
+    this.sessions.update((s) => ({
+      ...s,
+      [id]: {
+        ...s[id],
+        messages: [...s[id].messages, this.createMessage('assistant', content)],
+      },
+    }));
   }
 }

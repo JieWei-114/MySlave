@@ -66,6 +66,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
   padding: 10px 12px;
   margin-bottom: 8px;
   cursor: pointer;
@@ -73,6 +74,23 @@
   background: var(--primary-dark);
   color: white;
   transition: background 0.2s;
+  min-width: 0;
+}
+
+.session-content {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-right: 4px;
+}
+
+.session-content span {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .session input {
@@ -129,6 +147,9 @@
 
 .menu-container {
   position: relative;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
 }
 
 .menu-trigger {

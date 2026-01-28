@@ -4,15 +4,13 @@
     [class.collapsed]="sidebarCollapsed"
     [sessions]="store.visibleSessions()"
     [activeId]="store.currentSessionId()"
-    [showMemory]="showMemory"
-    [showWeb]="showWeb"
+    [showTools]="showTools"
     (newSession)="onNewChat()"
     (selectSession)="onSelectChat($event)"
     (deleteSession)="onDeleteChat($event)"
     (renameSession)="onRenameChat($event)"
-    (toggleMemory)="toggleMemory()"
+    (toggleTools)="toggleTools()"
     (toggleSidebar)="toggleSidebar()"
-    (toggleWeb)="toggleWeb()"
     [collapsed]="sidebarCollapsed"
   />
 
@@ -21,12 +19,10 @@
   </main>
 
   <app-memory-panel
-    *ngIf="showMemory"
+    *ngIf="showTools"
     [sessionId]="store.currentSessionId()!"
-    (close)="showMemory = false"
+    (close)="showTools = false"
     class="memory-drawer"
     id="memory-panel"
   />
-
-  <app-web-search *ngIf="showWeb" (close)="showWeb = false" />
 </div>

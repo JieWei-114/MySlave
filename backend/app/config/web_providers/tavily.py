@@ -1,10 +1,11 @@
 import httpx
 from datetime import date
+from typing import Any
 from app.config.settings import settings
-from app.core.db import db
+from app.core.db import tavily_quota_collection
 from app.config.web_providers.base import WebSearchProvider
 
-quota = db["tavily_quota"]
+quota = tavily_quota_collection
 
 def _month_key():
     today = date.today()
@@ -26,33 +27,48 @@ def consume_tavily():
 class TavilyProvider(WebSearchProvider):
     name = "tavily"
 
-    async def search(self, query: str, limit: int = 5) -> list[dict]:
+    async def search(self, query: str, limit: int = 5) -> list[dict[str, Any]]:
         if not settings.TAVILY_API_KEY:
-            raise Exception("TAVILY_API_KEY_NOT_SET")
+            return []
 
         if remaining_tavily_quota() <= 0:
-            raise Exception("TAVILY_MONTHLY_QUOTA_EXCEEDED")
+            return []
 
-        async with httpx.AsyncClient(timeout=20) as client:
-            res = await client.post(
-                "https://api.tavily.com/search",
-                json={
-                    "api_key": settings.TAVILY_API_KEY,
-                    "query": query,
-                    "max_results": limit,
-                    "search_depth": "advanced",
-                },
-            )
+        try:
+            async with httpx.AsyncClient(timeout=httpx.Timeout(20.0)) as client:
+                res = await client.post(
+                    "https://api.tavily.com/search",
+                    json={
+                        "api_key": settings.TAVILY_API_KEY,
+                        "query": query,
+                        "max_results": limit,
+                        "search_depth": "advanced",
+                        "include_answer": False,
+                        "include_images": False,
+                    },
+                )
+                res.raise_for_status()
+        except (httpx.HTTPError, httpx.TimeoutException):
+            return []
+
+        try:
+            data = res.json()
+        except Exception:
+            return []
+
+        results = data.get("results", [])
+        if not results:
+            return []
 
         consume_tavily()
 
-        data = res.json().get("results", [])
         return [
             {
-                "title": r.get("title"),
-                "snippet": r.get("content"),
-                "link": r.get("url"),
+                "title": r.get("title", ""),
+                "snippet": r.get("content", ""),
+                "link": r.get("url", ""),
                 "source": "tavily",
             }
-            for r in data
+            for r in results
+            if r.get("url")
         ]
