@@ -252,12 +252,6 @@ AVAILABLE_MODELS = [
         "description": "Google's lightweight model",
         "size": "7B"
     },
-    {
-        "id": "llama2:7b",
-        "name": "Llama 2 7B",
-        "description": "Meta's general-purpose model",
-        "size": "7B"
-    },
     # Add your custom models here
 ]
 ```
@@ -393,16 +387,6 @@ mongosh myslave
 **Interactive Swagger UI**:  
 http://127.0.0.1:8000/docs
 
-**Main Endpoints**:
-
-- `POST /api/chat/message` - Send message and get streaming response
-- `GET /api/chat/sessions` - List all chat sessions
-- `POST /api/chat/sessions` - Create new session
-- `DELETE /api/chat/sessions/{id}` - Delete session
-- `GET /api/memory` - Get session memories
-- `POST /api/memory` - Mark message as memorable
-- `GET /api/search` - Perform web search
-
 See Swagger docs for full endpoint details and request/response schemas.
 
 ## Project Structure
@@ -437,30 +421,6 @@ MySlave/
 └── README.md                   # This file
 ```
 
-## Roadmap & Future Features
-
-- [ ] User authentication & multi-user support
-- [ ] Export conversations (PDF, Markdown)
-- [ ] Conversation search & filtering
-- [ ] Custom system prompts per session
-- [ ] Voice input/output
-- [ ] Plugin system for custom tools
-- [ ] RAG (Retrieval Augmented Generation) integration
-- [ ] Model fine-tuning interface
-
-## Contributing
-
-Contributions are welcome! Areas for improvement:
-
-- Performance optimizations
-- Additional web search providers
-- UI/UX enhancements
-- Documentation improvements
-- Bug fixes and edge cases
-- Test coverage expansion
-
-Please ensure code follows the style guide (Prettier/Ruff) before submitting.
-
 ## Acknowledgments
 
 Built with incredible open-source projects:
@@ -482,9 +442,6 @@ A: Minimum 8GB recommended. Model size varies:
 - 7B models: ~6-8GB
 - 13B models: ~10-12GB
 - Running multiple services: 16GB+ recommended
-
-**Q: Can I use cloud-hosted models instead of Ollama?**  
-A: Currently no, but it's planned for a future version to support OpenAI API-compatible endpoints.
 
 **Q: How do I backup my conversations?**  
 A: All data is in MongoDB. Backup your MongoDB data directory or use `mongodump`/`mongorestore`.
