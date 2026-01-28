@@ -17,9 +17,8 @@ from app.services.chat_service import (
     list_sessions,
     rename_session,
 )
-from app.services.ollama_service import stream_ollama
 from app.services.memory_service import auto_memory_if_needed
-
+from app.services.ollama_service import stream_ollama
 
 router = APIRouter(prefix='/chat', tags=['chat'])
 

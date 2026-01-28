@@ -75,7 +75,10 @@ export class MemoryStore {
           this.memories.update((list) => [...list, m]);
         }
       },
-      complete: () => this.compressing.set(false),
+      complete: () => {
+        this.compressing.set(false)
+        this.load(sessionId)
+      },
       error: () => this.compressing.set(false),
     });
   }

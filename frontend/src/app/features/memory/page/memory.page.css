@@ -4,40 +4,7 @@
   height: 100%;
   transition: all var(--transition-base);
   position: relative;
-  border-radius: 10px;
   overflow: hidden;
-}
-
-.memory-body {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-.resize-handle {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 8px;
-  height: 100%;
-  cursor: ew-resize;
-  background: transparent;
-  z-index: 1000;
-}
-
-.resize-handle::before {
-  content: '';
-  position: absolute;
-  left: 3px;
-  top: 45%;
-  width: 5px;
-  height: 50px;
-  background: var(--gray-700);
-  border-radius: 2px;
-}
-
-.resize-handle:hover::before {
-  background: var(--gray-500);
 }
 
 .memory-header {
@@ -46,7 +13,6 @@
   align-items: center;
   gap: var(--spacing-md);
   background: var(--primary-light);
-  border-radius: 12px 12px 0 0;
   padding: 10px;
 }
 
@@ -77,21 +43,6 @@
 .tab .count {
   color: var(--gray-300);
   font-size: 12px;
-}
-
-.close-btn {
-  padding: 10px 15px;
-  border-radius: var(--radius-md);
-  background: var(--primary-lite);
-  cursor: pointer;
-  color: var(--gray-500);
-  transition: all var(--transition-base);
-}
-
-.close-btn:hover {
-  background: var(--error-color);
-  color: white;
-  border-color: var(--error-color);
 }
 
 .header-title {
@@ -226,13 +177,13 @@
   margin: auto;
 }
 
-.empty-state p {
-  font-size: 16px;
-  margin-bottom: var(--spacing-sm);
+.empty-state h3 {
+  font-size: 17px;
+  font-weight: 400;
 }
 
-.empty-state small {
-  color: white;
+.empty-state p {
+  font-size: 12px;
 }
 
 .memory-add-wrapper {
@@ -243,12 +194,12 @@
 
 .memory-add {
   display: flex;
-  gap: var(--spacing-md);
+  gap: var(--spacing-xs);
 }
 
 .memory-add textarea {
   width: 100%;
-  padding: 15px;
+  padding: 10px;
   border: none;
   border-radius: var(--radius-md);
   resize: none;
@@ -276,4 +227,24 @@
 .web-panel app-web-search {
   display: block;
   height: 100%;
+}
+
+.memory-actions input {
+  width: 100%;
+  padding: 10px;
+  border: none;
+  border-radius: var(--radius-md);
+  color: white;
+  background: var(--primary-lite);
+  transition: all var(--transition-base);
+}
+
+.memory-actions input:hover {
+  box-shadow: var(--shadow-lg);
+  background: var(--primary-lite);
+}
+
+.memory-actions input:focus {
+  box-shadow: var(--shadow-lg);
+  background: var(--primary-lite);
 }

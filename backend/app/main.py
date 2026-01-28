@@ -3,9 +3,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.chat import router as chat_router
 from app.api.memory import router as memory_router
+from app.api.web import router as web_router
 from app.config.settings import settings
 from app.core.db import client
-from app.api.tools import router as tools_router
 
 app = FastAPI(title='My Slave', version='1.0.0')
 
@@ -16,6 +16,7 @@ app.add_middleware(
     allow_methods=['*'],
     allow_headers=['*'],
 )
+
 
 @app.get('/')
 async def read_root():
@@ -37,6 +38,7 @@ async def health_check():
         'version': '1.0.0',
     }
 
+
 app.include_router(chat_router)
 app.include_router(memory_router)
-app.include_router(tools_router)
+app.include_router(web_router)

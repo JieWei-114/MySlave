@@ -18,7 +18,7 @@
     <router-outlet />
   </main>
 
-  <app-memory-panel
+  <app-panel
     *ngIf="showTools"
     [sessionId]="store.currentSessionId()!"
     (close)="showTools = false"

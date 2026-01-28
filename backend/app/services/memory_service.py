@@ -4,10 +4,11 @@ from bson import ObjectId
 from bson.errors import InvalidId
 
 from app.core.db import memories_collection
-from app.services.embedding_service import embed, cosine_similarity
+from app.services.embedding_service import cosine_similarity, embed
 from app.services.ollama_service import call_ollama_once
 
 MAX_CONTENT_LENGTH = 2000
+
 
 def serialize_memory(doc: dict) -> dict:
     return {
@@ -18,6 +19,7 @@ def serialize_memory(doc: dict) -> dict:
         'chat_sessionId': doc['chat_sessionId'],
         'source': doc.get('source', 'manual'),
     }
+
 
 # def add_memory(content: str, chat_sessionId: str, source: str = 'manual'):
 #     embedding = embed(content)
@@ -33,18 +35,19 @@ def serialize_memory(doc: dict) -> dict:
 #     memory['_id'] = result.inserted_id
 #     return serialize_memory(memory)
 
+
 def add_memory(content: str, chat_sessionId: str, source: str = 'manual'):
     if not content or not content.strip():
-        raise ValueError("Content cannot be empty")
-    
+        raise ValueError('Content cannot be empty')
+
     if len(content) > MAX_CONTENT_LENGTH:
         content = content[:MAX_CONTENT_LENGTH]
-    
+
     try:
         embedding = embed([content])[0]
     except Exception as e:
-        raise ValueError(f"Failed to generate embedding: {e}")
-    
+        raise ValueError(f'Failed to generate embedding: {e}')
+
     memory = {
         'chat_sessionId': chat_sessionId,
         'content': content.strip(),
@@ -68,7 +71,7 @@ def set_memory_enabled(memory_id: str, enabled: bool):
         oid = ObjectId(memory_id)
     except InvalidId:
         raise ValueError('Invalid memory id')
-    
+
     memories_collection.update_one({'_id': oid}, {'$set': {'enabled': enabled}})
 
 
@@ -94,6 +97,7 @@ def delete_memories_for_session(chat_sessionId: str) -> int:
     result = memories_collection.delete_many({'chat_sessionId': chat_sessionId})
     return result.deleted_count
 
+
 # def search_memories(chat_sessionId: str, query: str, limit: int = 5):
 #     query_vec = embed(query)
 
@@ -112,20 +116,23 @@ def delete_memories_for_session(chat_sessionId: str) -> int:
 
 #     return [serialize_memory(d[1]) for d in scored[:limit]]
 
+
 def search_memories(chat_sessionId: str, query: str, limit: int = 5, threshold: float = 0.5):
     if not query or not query.strip():
         return []
-    
+
     try:
         query_vec = embed([query])[0]
     except Exception:
         return []
 
-    cursor = memories_collection.find({
-        'chat_sessionId': chat_sessionId,
-        'enabled': True,
-        'embedding': {'$exists': True},
-    }).limit(100)  # Limit initial fetch
+    cursor = memories_collection.find(
+        {
+            'chat_sessionId': chat_sessionId,
+            'enabled': True,
+            'embedding': {'$exists': True},
+        }
+    ).limit(100)  # Limit initial fetch
 
     scored = []
     for doc in cursor:
@@ -147,7 +154,7 @@ async def compress_memories(chat_sessionId: str, model: str):
     if len(memories) < 2:
         return None
 
-    text = '\n'.join(f"- {m['content']}" for m in memories)
+    text = '\n'.join(f'- {m["content"]}' for m in memories)
 
     prompt = f"""
 Summarize the following memories into a concise, structured long-term memory.
@@ -176,18 +183,18 @@ Memories:
 
 def should_remember(user_text: str, assistant_text: str) -> bool:
     """Decide if a conversation turn should be saved as memory."""
-    if len(assistant_text.strip()) < 50:
+    if len(assistant_text.strip()) < 30:
+        return False
+
+    if len(user_text) + len(assistant_text) < 50:
         return False
 
     # Check for reject patterns (case-insensitive, whole message)
-    reject_patterns = ['hello', 'hi', 'hey', 'thanks', 'thank you', 'bye']
+    reject_patterns = ['dont remember']
     normalized = assistant_text.lower().strip()
     if any(pattern in normalized for pattern in reject_patterns):
         return False
 
-    if len(user_text) + len(assistant_text) < 100:
-        return False
-    
     # Check for explicit remember requests
     accept_patterns = ['remember', 'save this', 'keep in mind']
     if any(pattern in normalized for pattern in accept_patterns):
@@ -219,10 +226,10 @@ async def auto_memory_if_needed(
     if not should_remember(user_text, assistant_text):
         print('Auto Memory PASSED')
         return None
-    
+
     print('Auto Memory TRIGGERED')
-    
-    combined = f"User: {user_text}\nAssistant: {assistant_text}"
+
+    combined = f'User: {user_text}\nAssistant: {assistant_text}'
 
     summary = await summarize(combined, model)
 
@@ -233,5 +240,5 @@ async def auto_memory_if_needed(
             source='auto',
         )
     except Exception as e:
-        print(f"Failed to add auto memory: {e}")
+        print(f'Failed to add auto memory: {e}')
         return None

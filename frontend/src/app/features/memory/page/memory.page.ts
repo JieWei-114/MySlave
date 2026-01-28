@@ -4,19 +4,17 @@ import { CommonModule } from '@angular/common';
 import { MemoryStore } from '../store/memory.store';
 import { ChatStore } from '../../chat/store/chat.store';
 import { AppButtonComponent } from '../../../shared/ui/button/app-button.component';
-import { WebSearchComponent } from '../../tools/page/web/web-search.component';
 
 @Component({
   selector: 'app-memory-panel',
   standalone: true,
-  imports: [FormsModule, CommonModule, AppButtonComponent, WebSearchComponent],
+  imports: [FormsModule, CommonModule, AppButtonComponent],
   templateUrl: './memory.page.html',
   styleUrls: ['./memory.page.css'],
 })
 export class MemoryPage {
   private _sessionId = signal<string | null>(null);
   private searchTimer: any;
-  activeTool: 'memory' | 'web' = 'memory';
 
   @Input({ required: true })
   set sessionId(value: string) {
@@ -53,14 +51,16 @@ export class MemoryPage {
   onSearch(q: string) {
     clearTimeout(this.searchTimer);
 
-    if (q.trim().length < 2) return;
+    if (q.trim().length < 2) {
+      const id = this._sessionId();
+      if(id) {
+        this.store.load(id)
+      }
+      return;
+    } 
 
     this.searchTimer = setTimeout(() => {
       this.store.search(q);
     }, 300);
-  }
-
-  switchTool(tool: 'memory' | 'web') {
-    this.activeTool = tool;
   }
 }

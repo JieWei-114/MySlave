@@ -1,14 +1,15 @@
-import { Component, Output, EventEmitter, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { ChatStore } from '../../../chat/store/chat.store';
-import { ToolsApi } from '../../service/tools.api';
-import { QuotaInfo, WebSearchResult } from '../../service/tools.model';
+import { ChatStore } from '../../chat/store/chat.store';
+import { WebApi } from '../service/web.api';
+import { QuotaInfo, WebSearchResult } from '../service/web.model';
+import { AppButtonComponent } from '../../../shared/ui/button/app-button.component';
 
 @Component({
   selector: 'app-web-search',
   standalone: true,
-  imports: [FormsModule, CommonModule],
+  imports: [FormsModule, CommonModule, AppButtonComponent],
   templateUrl: './web-search.component.html',
   styleUrls: ['./web-search.component.css'],
 })
@@ -19,11 +20,9 @@ export class WebSearchComponent implements OnInit {
   loading = false;
 
   constructor(
-    private api: ToolsApi,
+    private api: WebApi,
     private chatStore: ChatStore,
   ) {}
-
-  @Output() close = new EventEmitter<void>();
 
   ngOnInit(): void {
     this.loadQuotas();

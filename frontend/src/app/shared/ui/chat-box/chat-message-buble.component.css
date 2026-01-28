@@ -44,13 +44,14 @@
   right: 8px;
   font-size: 12px;
   padding: 4px 8px;
-  border-radius: var(--radius-sm);
+  margin: 5px;
+  border-radius: var(--radius-md);
   background: rgba(187, 187, 187, 0.9);
   cursor: pointer;
   opacity: 0;
   transition: all var(--transition-base);
   backdrop-filter: blur(4px);
-  margin: 0px 5px 5px 0px;
+  margin: 5px;
 }
 
 .remember:hover {

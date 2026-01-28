@@ -142,12 +142,12 @@
 }
 
 .empty-state h3 {
-  font-size: 20px;
-  font-weight: 600;
+  font-size: 17px;
+  font-weight: 400;
 }
 
 .empty-state p {
-  font-size: 14px;
+  font-size: 12px;
 }
 
 .messages-container {
@@ -210,13 +210,13 @@
 
 .chat-input {
   display: flex;
-  gap: var(--spacing-md);
+  gap: var(--spacing-xs);
 }
 
 .chat-input textarea {
   width: 100%;
   resize: none;
-  padding: 15px;
+  padding: 10px;
   border-radius: var(--radius-md);
   color: white;
   background: var(--primary-lite);

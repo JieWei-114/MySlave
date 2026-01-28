@@ -3,7 +3,8 @@ from typing import Iterable, Sequence
 import numpy as np
 from sentence_transformers import SentenceTransformer
 
-_model = SentenceTransformer("all-MiniLM-L6-v2", device="cpu")  # set to "cuda" if available
+_model = SentenceTransformer('all-MiniLM-L6-v2', device='cpu')  # set to "cuda" if available
+
 
 def embed(texts: Iterable[str], normalize: bool = True) -> list[list[float]]:
     embeddings = _model.encode(
@@ -14,6 +15,7 @@ def embed(texts: Iterable[str], normalize: bool = True) -> list[list[float]]:
     )
     return embeddings.tolist()
 
+
 def cosine_similarity(a: Sequence[float], b: Sequence[float]) -> float:
     va = np.array(a, dtype=float)
     vb = np.array(b, dtype=float)
@@ -21,6 +23,7 @@ def cosine_similarity(a: Sequence[float], b: Sequence[float]) -> float:
     if denom == 0:
         return 0.0
     return float(np.dot(va, vb) / denom)
+
 
 # from sentence_transformers import SentenceTransformer
 # import numpy as np

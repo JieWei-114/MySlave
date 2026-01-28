@@ -3,11 +3,11 @@ from fastapi import APIRouter, HTTPException, Query
 from app.models.dto import CreateMemoryRequest
 from app.services.memory_service import (
     add_memory,
+    compress_memories,
     delete_memory,
     list_all_memories,
-    set_memory_enabled,
     search_memories,
-    compress_memories
+    set_memory_enabled,
 )
 
 router = APIRouter(prefix='/memory', tags=['memory'])
@@ -41,7 +41,8 @@ def remove_memory(memory_id: str):
         delete_memory(memory_id)
     except ValueError:
         raise HTTPException(status_code=400, detail='Invalid memory id')
-    
+
+
 @router.get('/search')
 def search(
     chat_sessionId: str,
@@ -50,9 +51,8 @@ def search(
 ):
     return search_memories(chat_sessionId, q, limit)
 
+
 @router.post('/compress')
 async def compress(chat_sessionId: str, model: str):
     result = await compress_memories(chat_sessionId, model)
     return result or {'status': 'skipped'}
-
-

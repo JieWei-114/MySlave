@@ -1,67 +1,41 @@
 <div class="memory-panel">
-  <div class="memory-header">
-    <div class="tab-group">
-      <button class="tab" [class.active]="activeTool === 'memory'" (click)="switchTool('memory')">
-        Memory
-        <span class="count" *ngIf="activeTool === 'memory'"
-          >{{ store.memories().length }} items</span
-        >
-      </button>
-      <button class="tab" [class.active]="activeTool === 'web'" (click)="switchTool('web')">
-        Web Search
-      </button>
+  <div class="memory-list">
+    <div class="memory-actions">
+      <input type="text" placeholder="Search memory..." (input)="onSearch($event.target.value)" />
+    </div>
+    <div class="memory-item" *ngFor="let m of store.memories()" [class.disabled]="!m.enabled">
+      <label class="memory-checkbox">
+        <input type="checkbox" [checked]="m.enabled" (change)="store.toggle(m)" />
+        <span class="checkmark"></span>
+      </label>
+
+      <div class="memory-content">
+        {{ m.content }}
+        <span class="tag" *ngIf="m.source === 'auto'">Auto</span>
+        <span class="tag" *ngIf="m.source === 'compress'">Compress</span>
+      </div>
+
+      <button class="btn-delete" (click)="store.delete(m)" title="Delete memory">🗑</button>
     </div>
 
-    <button class="close-btn" (click)="close.emit()" title="Close tools panel">✕</button>
-  </div>
-
-  <div class="memory-body" *ngIf="activeTool === 'memory'; else webTool">
-    <div class="memory-list">
-      <div class="memory-actions">
-        <input type="text" placeholder="Search memory..." (input)="onSearch($event.target.value)" />
-        <button class="btn-compress" (click)="compress()" [disabled]="store.compressing()">
-          <span *ngIf="!store.compressing()">Compress memories</span>
-          <span *ngIf="store.compressing()">Compressing...</span>
-        </button>
-      </div>
-      <div class="memory-item" *ngFor="let m of store.memories()" [class.disabled]="!m.enabled">
-        <label class="memory-checkbox">
-          <input type="checkbox" [checked]="m.enabled" (change)="store.toggle(m)" />
-          <span class="checkmark"></span>
-        </label>
-
-        <div class="memory-content">
-          {{ m.content }}
-          <span class="tag" *ngIf="m.source === 'auto'">Auto</span>
-          <span class="tag" *ngIf="m.source === 'compress'">Compress</span>
-        </div>
-
-        <button class="btn-delete" (click)="store.delete(m)" title="Delete memory">🗑</button>
-      </div>
-
-      <div class="empty-state" *ngIf="!store.memories().length">
-        <p>No memories yet</p>
-        <small>Add important information to remember</small>
-      </div>
-    </div>
-
-    <div class="memory-add-wrapper">
-      <div class="memory-add">
-        <textarea
-          [(ngModel)]="newMemory"
-          placeholder="Type something to remember..."
-          rows="1"
-        ></textarea>
-        <app-button class="btn-add" (click)="add()" [disabled]="!newMemory.trim()">Add</app-button>
-      </div>
+    <div class="empty-state" *ngIf="!store.memories().length">
+      <h3>No memories yet</h3>
+      <p>Add important information to remember</p>
     </div>
   </div>
 
-  <ng-template #webTool>
-    <div class="web-panel">
-      <app-web-search (close)="close.emit()" />
+  <div class="memory-add-wrapper">
+    <div class="memory-add">
+      <textarea
+        [(ngModel)]="newMemory"
+        placeholder="Type something to remember..."
+        rows="1"
+      ></textarea>
+      <app-button (click)="add()" [disabled]="!newMemory.trim()">Add</app-button>
+      <app-button class="btn-compress" (click)="compress()" [disabled]="store.compressing()">
+        <span *ngIf="!store.compressing()">Compress</span>
+        <span *ngIf="store.compressing()">...</span>
+      </app-button>
     </div>
-  </ng-template>
-
-  <div class="resize-handle"></div>
+  </div>
 </div>

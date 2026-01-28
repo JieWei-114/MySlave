@@ -1,26 +1,31 @@
 from typing import Any
+
 import httpx
+
 from app.config.settings import settings
-from app.core.db import serper_quota_collection
 from app.config.web_providers.base import WebSearchProvider
+from app.core.db import serper_quota_collection
 
 quota = serper_quota_collection
 
+
 def remaining_serper_quota() -> int:
-    doc = quota.find_one({"_id": "serper"})
+    doc = quota.find_one({'_id': 'serper'})
     if not doc:
         return settings.SERPER_TOTAL_LIMIT
-    return max(0, settings.SERPER_TOTAL_LIMIT - doc["count"])
+    return max(0, settings.SERPER_TOTAL_LIMIT - doc['count'])
+
 
 def consume_serper():
     quota.update_one(
-        {"_id": "serper"},
-        {"$inc": {"count": 1}},
+        {'_id': 'serper'},
+        {'$inc': {'count': 1}},
         upsert=True,
     )
 
+
 class SerperProvider(WebSearchProvider):
-    name = "serper"
+    name = 'serper'
 
     async def search(self, query: str, limit: int = 5) -> list[dict[str, Any]]:
         if not settings.SERPER_API_KEY:
@@ -32,12 +37,12 @@ class SerperProvider(WebSearchProvider):
         try:
             async with httpx.AsyncClient(timeout=httpx.Timeout(15.0)) as client:
                 res = await client.post(
-                    "https://google.serper.dev/search",
+                    'https://google.serper.dev/search',
                     headers={
-                        "X-API-KEY": settings.SERPER_API_KEY,
-                        "Content-Type": "application/json",
+                        'X-API-KEY': settings.SERPER_API_KEY,
+                        'Content-Type': 'application/json',
                     },
-                    json={"q": query, "num": limit},
+                    json={'q': query, 'num': limit},
                 )
                 res.raise_for_status()
         except (httpx.HTTPError, httpx.TimeoutException):
@@ -48,7 +53,7 @@ class SerperProvider(WebSearchProvider):
         except Exception:
             return []
 
-        results = data.get("organic", [])
+        results = data.get('organic', [])
         if not results:
             return []
 
@@ -56,11 +61,11 @@ class SerperProvider(WebSearchProvider):
 
         return [
             {
-                "title": r.get("title", ""),
-                "snippet": r.get("snippet", ""),
-                "link": r.get("link", ""),
-                "source": "serper",
+                'title': r.get('title', ''),
+                'snippet': r.get('snippet', ''),
+                'link': r.get('link', ''),
+                'source': 'serper',
             }
             for r in results
-            if r.get("link")
+            if r.get('link')
         ]

@@ -1,11 +1,13 @@
 import asyncio
 from typing import Any
 
-from duckduckgo_search import DDGS
+from ddgs import DDGS
+
 from app.config.web_providers.base import WebSearchProvider
 
+
 class DuckDuckGoProvider(WebSearchProvider):
-    name = "ddg"
+    name = 'ddg'
 
     async def search(self, query: str, limit: int = 5) -> list[dict[str, Any]]:
         def _search():
@@ -19,11 +21,11 @@ class DuckDuckGoProvider(WebSearchProvider):
 
         return [
             {
-                "title": r.get("title", ""),
-                "snippet": r.get("body", ""),
-                "link": r.get("href", ""),
-                "source": "ddg",
+                'title': r.get('title', ''),
+                'snippet': r.get('body', ''),
+                'link': r.get('href', ''),
+                'source': 'ddg',
             }
             for r in results
-            if r.get("href")
+            if r.get('href')
         ]

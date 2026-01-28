@@ -8,11 +8,10 @@ from app.core.db import sessions_collection
 from app.services.memory_service import (
     delete_memories_for_session,
     search_memories,
-    list_enabled_memories,
 )
-from app.services.web_search_service import maybe_web_search, maybe_extract
+from app.services.web_search_service import maybe_extract, maybe_web_search
 
-MAX_PROMPT_LENGTH = 8000
+MAX_PROMPT_LENGTH = 12000
 
 
 def create_session(title: str) -> dict:
@@ -128,22 +127,32 @@ def stream_chat_reply(session_id: str, content: str) -> Generator[str, None, Non
     yield 'event: done\ndata: [DONE]\n\n'
 
 
-async def build_prompt_with_memory(user_content: str, chat_sessionId: str = 'default') -> str:
+async def build_prompt_with_memory(
+    user_content: str,
+    chat_sessionId: str = 'default',
+) -> str:
     """
     Build final prompt with persistent memories + web search + extracted content.
 
-    1. Searches persistent memories (semantic similarity)
-    2. Performs web search if needed
-    3. Extracts content from URLs
-    4. Combines all sources with clear provenance
-    5. Caps total length to fit model context
-    
-    Returns: Full prompt ready for LLM with annotated sources
+    Pipeline:
+    1. Semantic memory retrieval
+    2. URL extraction (explicit > implicit)
+    3. Web search (only if NOT explicit extract)
+    4. Combine all sources with provenance
+    5. Cap prompt length for model safety
     """
-    if not user_content or not user_content.strip():
-        return ""
 
-    blocks = []
+    if not user_content or not user_content.strip():
+        return ''
+
+    user_content = user_content.strip()
+    user_lower = user_content.lower()
+
+    MAX_EXTRACT_CHARS = 3000
+    MAX_PROMPT_LENGTH = 12000
+
+    blocks: list[str] = []
+
     metadata = {
         'memory_count': 0,
         'memory_sources': [],
@@ -152,90 +161,121 @@ async def build_prompt_with_memory(user_content: str, chat_sessionId: str = 'def
         'extracted': False,
     }
 
-    # ===== Persistent Memories =====
+    # --------------------------------------------------
+    # Detect explicit extract intent (VERY IMPORTANT)
+    # --------------------------------------------------
+    EXTRACT_KEYWORDS = [
+        'extract',
+        'local extract',
+        'tavily extract',
+        'extract both',
+    ]
+
+    is_explicit_extract = any(k in user_lower for k in EXTRACT_KEYWORDS)
+
+    # ==================================================
+    # 1. Persistent Memories
+    # ==================================================
     try:
-        # memories = list_enabled_memories(chat_sessionId)
         memories = search_memories(chat_sessionId, user_content, limit=10)
+
         if memories:
             memory_lines = []
+            sources = set()
+
             for m in memories:
-                source_label = f"[{m['source'].upper()}]" if m.get('source') else "[MEMORY]"
-                memory_lines.append(f"  {source_label} {m['content']}")
-            
+                src = m.get('source', 'memory')
+                sources.add(src)
+                label = f'[{src.upper()}]'
+                memory_lines.append(f'  {label} {m["content"]}')
+
             metadata['memory_count'] = len(memories)
-            metadata['memory_sources'] = list(set(m.get('source', 'manual') for m in memories))
-            
+            metadata['memory_sources'] = sorted(sources)
+
             blocks.append(
-                f"## PERSISTENT MEMORY ({len(memories)} items)\n"
-                f"Type(s): {', '.join(metadata['memory_sources'])}\n"
-                f"Relevance: Semantically matched to user query\n\n"
-                + "\n".join(memory_lines)
+                '## PERSISTENT MEMORY\n'
+                f'Items: {len(memories)}\n'
+                f'Source(s): {", ".join(metadata["memory_sources"])}\n'
+                'Relevance: Semantically matched\n\n' + '\n'.join(memory_lines)
             )
     except Exception as e:
-        print(f"Memory search failed: {e}")
+        print(f'[build_prompt] Memory search failed: {e}')
 
-    # ===== Web Search =====
-    try:
-        web_results = await maybe_web_search(user_content, limit=5)
-        if web_results:
-            web_lines = []
-            for r in web_results:
-                source = r.get('source', 'unknown').upper()
-                metadata['web_sources'].add(source)
-                web_lines.append(
-                    f"  [{source}] {r['title']}\n"
-                    f"    {r['snippet']}\n"
-                    f"    Link: {r['link']}"
-                )
-            
-            metadata['web_count'] = len(web_results)
-            
-            blocks.append(
-                f"## WEB SEARCH RESULTS ({len(web_results)} results)\n"
-                f"Provider(s): {', '.join(sorted(metadata['web_sources']))}\n"
-                f"Query: {user_content[:100]}\n\n"
-                + "\n".join(web_lines)
-            )
-    except Exception as e:
-        print(f"Web search failed: {e}")
-
-    # ===== Web Content Extraction =====
+    # ==================================================
+    # 2. URL Extraction (explicit OR auto)
+    # ==================================================
     try:
         extracted = await maybe_extract(user_content)
-        if extracted:
+
+        if extracted and extracted.strip():
             metadata['extracted'] = True
-            # Cap extracted content but preserve structure
-            extracted_preview = extracted[:3000]
-            if len(extracted) > 3000:
-                extracted_preview += "\n[... content truncated ...]"
-            
+
+            preview = extracted[:MAX_EXTRACT_CHARS]
+            if len(extracted) > MAX_EXTRACT_CHARS:
+                preview += '\n\n[... content truncated ...]'
+
             blocks.append(
-                f"## EXTRACTED WEB CONTENT\n"
-                f"Method: Smart extraction (Tavily → Local fallback)\n"
-                f"Length: {len(extracted)} chars\n\n"
-                + extracted_preview
+                '## EXTRACTED WEB CONTENT\n'
+                'Method: Smart extract (Tavily → Local fallback)\n'
+                f'Length: {len(extracted)} chars\n\n' + preview
             )
     except Exception as e:
-        print(f"Web extract failed: {e}")
+        print(f'[build_prompt] Web extract failed: {e}')
 
-    # ===== Build Summary Header =====
-    summary_header = f""" === PROMPT CONTEXT SUMMARY ===
-User Query: {user_content[:80]}{"..." if len(user_content) > 80 else ""}
+    # ==================================================
+    # 3. Web Search (ONLY if NOT explicit extract)
+    # ==================================================
+    if not is_explicit_extract and not metadata['extracted']:
+        try:
+            web_results = await maybe_web_search(user_content, limit=5)
+
+            if web_results:
+                web_lines = []
+
+                for r in web_results:
+                    source = r.get('source', 'unknown').upper()
+                    metadata['web_sources'].add(source)
+
+                    web_lines.append(
+                        f'  [{source}] {r.get("title", "")}\n'
+                        f'    {r.get("snippet", "")}\n'
+                        f'    Link: {r.get("link", "")}'
+                    )
+
+                metadata['web_count'] = len(web_results)
+
+                blocks.append(
+                    '## WEB SEARCH RESULTS\n'
+                    f'Results: {len(web_results)}\n'
+                    f'Provider(s): {", ".join(sorted(metadata["web_sources"]))}\n'
+                    f'Query: {user_content[:120]}\n\n' + '\n'.join(web_lines)
+                )
+        except Exception as e:
+            print(f'[build_prompt] Web search failed: {e}')
+    else:
+        print('[build_prompt] Skipping web search (explicit extract detected)')
+
+    # ==================================================
+    # 4. Summary Header
+    # ==================================================
+    summary_header = f"""
+=== PROMPT CONTEXT SUMMARY ===
+User Query: {user_content[:80]}{'...' if len(user_content) > 80 else ''}
 Session: {chat_sessionId}
 
- Sources used:
-  • Persistent Memories: {metadata['memory_count']} items ({', '.join(metadata['memory_sources']) if metadata['memory_sources'] else 'none'})
-  • Web Search: {metadata['web_count']} results ({', '.join(sorted(metadata['web_sources'])) if metadata['web_sources'] else 'not used'})
-  • Web Extract: {'Yes' if metadata['extracted'] else 'No'}
+Sources Used:
+ • Memories: {metadata['memory_count']} ({', '.join(metadata['memory_sources']) if metadata['memory_sources'] else 'none'})
+ • Web Search: {metadata['web_count']} ({', '.join(sorted(metadata['web_sources'])) if metadata['web_sources'] else 'not used'})
+ • Web Extract: {'YES' if metadata['extracted'] else 'NO'}
 
 ================================
-"""
+""".strip()
 
-    context = "\n".join(blocks)
+    context = '\n\n'.join(blocks) if blocks else 'No augmented context available.'
 
     prompt = f"""{summary_header}
 
-{context if context else "No augmented context available."}
+{context}
 
 ---
 
@@ -243,9 +283,14 @@ Session: {chat_sessionId}
 {user_content}
 """
 
-    # Cap total prompt length
+    # ==================================================
+    # 5. Hard cap prompt length
+    # ==================================================
     if len(prompt) > MAX_PROMPT_LENGTH:
-        prompt = prompt[:MAX_PROMPT_LENGTH] + "\n\n[... prompt truncated to fit context window ...]"
+        prompt = (
+            prompt[:MAX_PROMPT_LENGTH]
+            + '\n\n[... prompt truncated to fit model context window ...]'
+        )
 
     print('FINAL PROMPT:\n', prompt)
     print('CONTEXT METADATA:', metadata)
