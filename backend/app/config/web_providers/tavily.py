@@ -10,13 +10,13 @@ from app.core.db import tavily_quota_collection
 quota = tavily_quota_collection
 
 
-def _month_key():
+def month_key():
     today = date.today()
     return f'{today.year}-{today.month:02d}'
 
 
 def remaining_tavily_quota() -> int:
-    doc = quota.find_one({'month': _month_key()})
+    doc = quota.find_one({'month': month_key()})
     if not doc:
         return settings.TAVILY_MONTHLY_LIMIT
     return max(0, settings.TAVILY_MONTHLY_LIMIT - doc['count'])
@@ -24,7 +24,7 @@ def remaining_tavily_quota() -> int:
 
 def consume_tavily():
     quota.update_one(
-        {'month': _month_key()},
+        {'month': month_key()},
         {'$inc': {'count': 1}},
         upsert=True,
     )
@@ -33,17 +33,22 @@ def consume_tavily():
 class TavilyProvider(WebSearchProvider):
     name = 'tavily'
 
-    async def search(self, query: str, limit: int = 5) -> list[dict[str, Any]]:
+    async def search(self, query: str, limit: int = None) -> list[dict[str, Any]]:
         if not settings.TAVILY_API_KEY:
             return []
+
+        if limit is None:
+            limit = settings.TAVILY_LIMIT
 
         if remaining_tavily_quota() <= 0:
             return []
 
+        timeout = httpx.Timeout(settings.TAVILY_TIMEOUT)
+
         try:
-            async with httpx.AsyncClient(timeout=httpx.Timeout(20.0)) as client:
+            async with httpx.AsyncClient(timeout=timeout) as client:
                 res = await client.post(
-                    'https://api.tavily.com/search',
+                    f'{settings.TAVILY_URL}/search',
                     json={
                         'api_key': settings.TAVILY_API_KEY,
                         'query': query,

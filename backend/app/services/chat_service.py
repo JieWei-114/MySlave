@@ -4,12 +4,18 @@ from datetime import datetime
 from typing import Generator
 from urllib.parse import quote
 
+from app.config.settings import settings
 from app.core.db import sessions_collection
 from app.services.memory_service import (
     delete_memories_for_session,
     search_memories,
 )
 from app.services.web_search_service import maybe_extract, maybe_web_search
+
+MAX_PROMPT_LENGTH = settings.CHAT_PROMPT_MAX_LENGTH
+MEMORY_LIMIT = settings.CHAT_MEMORY_LIMIT
+WEB_SEARCH_LIMIT = settings.CHAT_WEB_SEARCH_LIMIT
+
 
 def create_session(title: str) -> dict:
     now = datetime.utcnow()
@@ -20,6 +26,14 @@ def create_session(title: str) -> dict:
         'messages': [],
         'created_at': now,
         'updated_at': now,
+        'rules': {
+            'searxng': True,
+            'duckduckgo': True,
+            'tavily': True,
+            'serper': True,
+            'tavilyExtract': True,
+            'localExtract': True,
+        },
     }
 
     sessions_collection.insert_one(session)
@@ -30,6 +44,7 @@ def create_session(title: str) -> dict:
         'messages': [],
         'created_at': session['created_at'],
         'updated_at': session['updated_at'],
+        'rules': session['rules'],
     }
 
 
@@ -40,16 +55,34 @@ def get_session(session_id: str) -> dict | None:
 
 def list_sessions() -> list[dict]:
     cursor = sessions_collection.find(
-        {},
+        {'id': {'$ne': '__order__'}},
         {
             '_id': 0,
             'id': 1,
             'title': 1,
             'updated_at': 1,
         },
-    ).sort('updated_at', -1)
+    )
 
-    return list(cursor)
+    sessions = list(cursor)
+
+    order_doc = sessions_collection.find_one({'id': '__order__'}, {'_id': 0})
+    if order_doc and 'sessionIds' in order_doc:
+        ordered_ids = order_doc['sessionIds']
+        session_map = {s['id']: s for s in sessions}
+
+        result = []
+        for sid in ordered_ids:
+            if sid in session_map:
+                result.append(session_map[sid])
+
+        for s in sessions:
+            if s['id'] not in ordered_ids:
+                result.append(s)
+
+        return result
+
+    return sorted(sessions, key=lambda s: s.get('updated_at', ''), reverse=True)
 
 
 def rename_session(session_id: str, title: str) -> dict:
@@ -68,7 +101,12 @@ def delete_session(session_id: str) -> bool:
     if result.deleted_count != 1:
         return False
 
-    # Also delete any memories tied to this chat session
+    sessions_collection.update_one(
+        {'id': '__order__'},
+        {'$pull': {'sessionIds': session_id}},
+    )
+
+    # delete any memories tied to this chat session
     delete_memories_for_session(session_id)
     return True
 
@@ -145,9 +183,6 @@ async def build_prompt_with_memory(
     user_content = user_content.strip()
     user_lower = user_content.lower()
 
-    MAX_EXTRACT_CHARS = 3000
-    MAX_PROMPT_LENGTH = 12000
-
     blocks: list[str] = []
 
     metadata = {
@@ -158,9 +193,7 @@ async def build_prompt_with_memory(
         'extracted': False,
     }
 
-    # --------------------------------------------------
     # Detect explicit extract intent
-    # --------------------------------------------------
     EXTRACT_KEYWORDS = [
         'extract',
         'local extract',
@@ -169,11 +202,9 @@ async def build_prompt_with_memory(
 
     is_explicit_extract = any(k in user_lower for k in EXTRACT_KEYWORDS)
 
-    # ==================================================
     # 1. Persistent Memories
-    # ==================================================
     try:
-        memories = search_memories(chat_sessionId, user_content, limit=10)
+        memories = search_memories(chat_sessionId, user_content, limit=MEMORY_LIMIT)
 
         if memories:
             memory_lines = []
@@ -189,41 +220,39 @@ async def build_prompt_with_memory(
             metadata['memory_sources'] = sorted(sources)
 
             blocks.append(
-                '## PERSISTENT MEMORY\n'
+                'PERSISTENT MEMORY\n'
                 f'Items: {len(memories)}\n'
                 f'Source(s): {", ".join(metadata["memory_sources"])}\n'
                 'Relevance: Semantically matched\n\n' + '\n'.join(memory_lines)
             )
     except Exception as e:
-        print(f'[build_prompt] Memory search failed: {e}')
+        print(f'build prompt memory search failed: {e}')
 
-    # ==================================================
     # 2. URL Extraction (explicit OR auto)
-    # ==================================================
     try:
-        extracted = await maybe_extract(user_content)
+        extracted = await maybe_extract(user_content, session_id=chat_sessionId)
 
         if extracted and extracted.strip():
             metadata['extracted'] = True
 
-            preview = extracted[:MAX_EXTRACT_CHARS]
-            if len(extracted) > MAX_EXTRACT_CHARS:
-                preview += '\n\n[... content truncated ...]'
+            preview = extracted[: settings.CHAT_EXTRACT_MAX_CHARS]
+            if len(extracted) > settings.CHAT_EXTRACT_MAX_CHARS:
+                preview += '\n\n[content truncated]'
 
             blocks.append(
-                '## EXTRACTED WEB CONTENT\n'
-                'Method: Smart extract (Tavily → Local fallback)\n'
+                'EXTRACTED WEB CONTENT\n'
+                'Method: Extract\n'
                 f'Length: {len(extracted)} chars\n\n' + preview
             )
     except Exception as e:
-        print(f'[build_prompt] Web extract failed: {e}')
+        print(f'build_prompt web extract failed: {e}')
 
-    # ==================================================
     # 3. Web Search (ONLY if NOT explicit extract)
-    # ==================================================
     if not is_explicit_extract and not metadata['extracted']:
         try:
-            web_results = await maybe_web_search(user_content, limit=5)
+            web_results = await maybe_web_search(
+                user_content, limit=WEB_SEARCH_LIMIT, session_id=chat_sessionId
+            )
 
             if web_results:
                 web_lines = []
@@ -241,52 +270,42 @@ async def build_prompt_with_memory(
                 metadata['web_count'] = len(web_results)
 
                 blocks.append(
-                    '## WEB SEARCH RESULTS\n'
+                    'WEB SEARCH RESULTS\n'
+                    'Method: Web Search\n'
                     f'Results: {len(web_results)}\n'
                     f'Provider(s): {", ".join(sorted(metadata["web_sources"]))}\n'
-                    f'Query: {user_content[:120]}\n\n' + '\n'.join(web_lines)
+                    f'Query: {user_content[:150]}\n\n' + '\n'.join(web_lines)
                 )
         except Exception as e:
-            print(f'[build_prompt] Web search failed: {e}')
+            print(f'build_prompt web search failed: {e}')
     else:
-        print('[build_prompt] Skipping web search (explicit extract detected)')
+        print('build_prompt skipping web search (explicit extract detected)')
 
-    # ==================================================
     # 4. Summary Header
-    # ==================================================
     summary_header = f"""
-=== PROMPT CONTEXT SUMMARY ===
-User Query: {user_content[:80]}{'...' if len(user_content) > 80 else ''}
+
+PROMPT CONTEXT SUMMARY
+User Query: {user_content[:100]}{'...' if len(user_content) > 100 else ''}
 Session: {chat_sessionId}
 
 Sources Used:
- • Memories: {metadata['memory_count']} ({', '.join(metadata['memory_sources']) if metadata['memory_sources'] else 'none'})
- • Web Search: {metadata['web_count']} ({', '.join(sorted(metadata['web_sources'])) if metadata['web_sources'] else 'not used'})
- • Web Extract: {'YES' if metadata['extracted'] else 'NO'}
-
-================================
+Memories: {metadata['memory_count']} ({', '.join(metadata['memory_sources']) if metadata['memory_sources'] else 'none'})
+Web Search: {metadata['web_count']} ({', '.join(sorted(metadata['web_sources'])) if metadata['web_sources'] else 'not used'})
+Web Extract: {'YES' if metadata['extracted'] else 'NO'}
 """.strip()
 
     context = '\n\n'.join(blocks) if blocks else 'No augmented context available.'
 
-    prompt = f"""{summary_header}
+    prompt = f"""
 
+{summary_header}
 {context}
-
----
-
-## USER QUERY
-{user_content}
+USER QUERY: {user_content}
 """
 
-    # ==================================================
     # 5. Hard cap prompt length
-    # ==================================================
     if len(prompt) > MAX_PROMPT_LENGTH:
-        prompt = (
-            prompt[:MAX_PROMPT_LENGTH]
-            + '\n\n[... prompt truncated to fit model context window ...]'
-        )
+        prompt = prompt[:MAX_PROMPT_LENGTH] + '\n\n[prompt truncated to fit model context window]'
 
     print('FINAL PROMPT:\n', prompt)
     print('CONTEXT METADATA:', metadata)

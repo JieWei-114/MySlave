@@ -218,6 +218,12 @@
   background: var(--primary-lite);
 }
 
+.memory-button {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
 .web-panel {
   flex: 1;
   padding: 12px;

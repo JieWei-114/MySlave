@@ -1,23 +1,40 @@
-import httpx
-from app.config.settings import settings
+from datetime import date
 
-MAX_EXTRACT_LENGTH = 40_000
+import httpx
+
+from app.config.settings import settings
+from app.core.db import tavily_quota_collection
+
+MAX_EXTRACT_LENGTH = settings.TAVILY_EXTRACT_MAX_LENGTH
+
+
+def consume_tavily():
+    today = date.today()
+    month_key = f'{today.year}-{today.month:02d}'
+
+    tavily_quota_collection.update_one(
+        {'month': month_key},
+        {'$inc': {'count': 1}},
+        upsert=True,
+    )
 
 
 async def extract_url(url: str) -> str:
-    """Extract main content from a URL using Tavily's extract API."""
+    # Extract main content from a URL using Tavily's extract API
 
-    print('tavily_extract.py LOADED')
+    print('Tavily extract LOADED')
     print(f'Tavily extract CALLED with {url}')
 
     if not settings.TAVILY_API_KEY:
-        print('[tavily] missing api key')
+        print('Tavily missing api key')
         return ''
 
+    timeout = httpx.Timeout(settings.TAVILY_EXTRACT_TIMEOUT)
+
     try:
-        async with httpx.AsyncClient(timeout=httpx.Timeout(20.0)) as client:
+        async with httpx.AsyncClient(timeout=timeout) as client:
             res = await client.post(
-                'https://api.tavily.com/extract',
+                f'{settings.TAVILY_URL}/extract',
                 json={
                     'api_key': settings.TAVILY_API_KEY,
                     'urls': [url],
@@ -26,7 +43,7 @@ async def extract_url(url: str) -> str:
             )
             res.raise_for_status()
     except Exception as e:
-        print('[tavily HTTP ERROR]', type(e).__name__, e)
+        print('Tavily extract ERROR:', type(e).__name__, e)
         return ''
 
     try:
@@ -34,20 +51,19 @@ async def extract_url(url: str) -> str:
         results = data.get('results', [])
 
         if not results:
-            print('[tavily] empty results')
+            print('Tavily extract empty results')
             return ''
 
         item = results[0]
 
-        content = (
-            item.get('content')
-            or item.get('raw_content')
-            or ''
-        )
+        content = item.get('content') or item.get('raw_content') or ''
 
         if not content.strip():
-            print('[tavily] no extractable content')
+            print('Tavily no extractable content')
             return ''
+
+        consume_tavily()
+        print('Tavily quota decremented')
 
         if len(content) > MAX_EXTRACT_LENGTH:
             return content[:MAX_EXTRACT_LENGTH].rstrip() + '…'
@@ -55,5 +71,5 @@ async def extract_url(url: str) -> str:
         return content
 
     except Exception as e:
-        print('[tavily PARSE ERROR]', type(e).__name__, e)
+        print('Tavily extract ERROR', type(e).__name__, e)
         return ''

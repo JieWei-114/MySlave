@@ -14,3 +14,10 @@ export interface WebSearchResponse {
   results: WebSearchResult[];
   quotas: QuotaInfo;
 }
+
+export interface WebState {
+  q: string;
+  results: WebSearchResult[];
+  quotas: QuotaInfo | null;
+  loading: boolean;
+}

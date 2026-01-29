@@ -4,11 +4,12 @@ import { CommonModule } from '@angular/common';
 import { MemoryStore } from '../store/memory.store';
 import { ChatStore } from '../../chat/store/chat.store';
 import { AppButtonComponent } from '../../../shared/ui/button/app-button.component';
+import { AutoResizeTextareaDirective } from '../../../shared/directives/auto-resize-textarea.directive';
 
 @Component({
   selector: 'app-memory-panel',
   standalone: true,
-  imports: [FormsModule, CommonModule, AppButtonComponent],
+  imports: [FormsModule, CommonModule, AppButtonComponent, AutoResizeTextareaDirective],
   templateUrl: './memory.page.html',
   styleUrls: ['./memory.page.css'],
 })
@@ -33,7 +34,7 @@ export class MemoryPage {
       const id = this._sessionId();
       if (!id) return;
 
-      console.log('[Memory] reload for session:', id);
+      console.log('Memory reload for session:', id);
       this.store.load(id);
     });
   }
@@ -53,11 +54,11 @@ export class MemoryPage {
 
     if (q.trim().length < 2) {
       const id = this._sessionId();
-      if(id) {
-        this.store.load(id)
+      if (id) {
+        this.store.load(id);
       }
       return;
-    } 
+    }
 
     this.searchTimer = setTimeout(() => {
       this.store.search(q);

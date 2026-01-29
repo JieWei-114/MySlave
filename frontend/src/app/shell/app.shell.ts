@@ -27,7 +27,7 @@ export class AppShell implements AfterViewInit {
 
   ngAfterViewInit() {
     if (isPlatformBrowser(this.platformId)) {
-      // Panel resize logic is now in PanelComponent
+      // Panel resize logic is in PanelComponent
     }
   }
 
@@ -51,6 +51,11 @@ export class AppShell implements AfterViewInit {
   onRenameChat({ id, title }: { id: string; title: string }) {
     this.store.renameSession(id, title);
   }
+
+  onSessionsReordered(sessions: any[]): void {
+    this.store.reorderSessions(sessions);
+  }
+
   toggleTools() {
     this.showTools = !this.showTools;
   }

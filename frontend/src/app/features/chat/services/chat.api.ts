@@ -1,6 +1,5 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
 
 import { AppConfigService } from '../../../core/services/app-config.services';
 import { ChatSession, ChatSessionDto } from './chat.model';
@@ -38,6 +37,10 @@ export class ChatApi {
 
   deleteSession(sessionId: string) {
     return this.http.delete(`${this.config.apiBaseUrl}/chat/${sessionId}`);
+  }
+
+  reorderSessions(sessionIds: string[]) {
+    return this.http.post<void>(`${this.config.apiBaseUrl}/chat/reorder`, { sessionIds });
   }
 
   streamMessage(

@@ -3,16 +3,22 @@ from typing import Any
 
 from ddgs import DDGS
 
+from app.config.settings import settings
 from app.config.web_providers.base import WebSearchProvider
 
 
 class DuckDuckGoProvider(WebSearchProvider):
     name = 'ddg'
 
-    async def search(self, query: str, limit: int = 5) -> list[dict[str, Any]]:
+    async def search(self, query: str, limit: int = None) -> list[dict[str, Any]]:
+        if limit is None:
+            limit = settings.DDG_LIMIT
+
+        timeout = settings.DDG_TIMEOUT
+
         def _search():
             try:
-                with DDGS(timeout=10) as ddgs:
+                with DDGS(timeout=timeout) as ddgs:
                     return list(ddgs.text(query, max_results=limit))
             except Exception:
                 return []

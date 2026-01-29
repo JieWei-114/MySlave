@@ -9,12 +9,15 @@ from app.config.web_providers.base import WebSearchProvider
 class SearXNGProvider(WebSearchProvider):
     name = 'searxng'
 
-    async def search(self, query: str, limit: int = 5) -> list[dict[str, Any]]:
+    async def search(self, query: str, limit: int = None) -> list[dict[str, Any]]:
         if not settings.SEARXNG_URL:
             return []
 
+        if limit is None:
+            limit = settings.SEARXNG_LIMIT
+
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
-        timeout = httpx.Timeout(10.0)
+        timeout = httpx.Timeout(settings.SEARXNG_TIMEOUT)
 
         try:
             async with httpx.AsyncClient(headers=headers, timeout=timeout) as client:

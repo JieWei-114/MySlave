@@ -27,15 +27,18 @@
   <div class="memory-add-wrapper">
     <div class="memory-add">
       <textarea
+        appAutoResize
         [(ngModel)]="newMemory"
         placeholder="Type something to remember..."
         rows="1"
       ></textarea>
-      <app-button (click)="add()" [disabled]="!newMemory.trim()">Add</app-button>
-      <app-button class="btn-compress" (click)="compress()" [disabled]="store.compressing()">
-        <span *ngIf="!store.compressing()">Compress</span>
-        <span *ngIf="store.compressing()">...</span>
-      </app-button>
+      <div class="memory-button">
+        <app-button (click)="add()" [disabled]="!newMemory.trim()">Add</app-button>
+        <app-button class="btn-compress" (click)="compress()" [disabled]="store.compressing()">
+          <span *ngIf="!store.compressing()">Compress</span>
+          <span *ngIf="store.compressing()">...</span>
+        </app-button>
+      </div>
     </div>
   </div>
 </div>

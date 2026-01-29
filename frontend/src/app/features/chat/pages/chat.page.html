@@ -52,13 +52,47 @@
 
   <div class="chat-input-wrapper">
     <div class="chat-input">
+      <div class="file-input-wrapper">
+        <input
+          #fileInput
+          class="file-input"
+          type="file"
+          accept=".txt,.md,.json,.csv,.log,.html,.css,.ts,.js,.py,.yaml,.yml,text/*"
+          (change)="onFileSelected($event)"
+          [disabled]="store.loading()"
+        />
+
+        <app-button
+          *ngIf="!selectedFileName()"
+          class="btn-upload"
+          title="Upload file"
+          (click)="fileInput.click()"
+          [disabled]="store.loading()"
+        >
+          +
+        </app-button>
+
+        <app-button
+          *ngIf="selectedFileName()"
+          class="btn-remove"
+          title="Remove file"
+          (click)="clearFile()"
+          [disabled]="store.loading()"
+        >
+          ✖
+        </app-button>
+      </div>
+
       <textarea
+        #chatTextarea
         appAutoFocus
+        appAutoResize
         [(ngModel)]="message"
         placeholder="Type your message... (Shift + Enter for new line)"
         rows="1"
         [disabled]="store.loading()"
         (keydown)="onKeyDown($event)"
+        (ngModelChange)="triggerResize()"
       ></textarea>
 
       <div class="input-actions">
@@ -75,6 +109,11 @@
           Send
         </app-button>
       </div>
+    </div>
+
+    <div class="file-meta" *ngIf="selectedFileName() || fileError()">
+      <span *ngIf="selectedFileName()">Attached: {{ selectedFileName() }}</span>
+      <span *ngIf="fileError()" class="file-error">{{ fileError() }}</span>
     </div>
   </div>
 </div>

@@ -1,115 +1,136 @@
 <div class="rules-container">
-  @if (store.loading()) {
+  <!-- Loading State -->
+  @if (rulesStore.loading()) {
     <div class="rules-loading">
-      <p>Loading rules...</p>
-    </div>
-  } @else if (store.error()) {
-    <div class="rules-error">
-      <p>{{ store.error() }}</p>
-    </div>
-  } @else {
-    <div class="rules-wrapper">
-      <div class="rules-section">
-        <h3>Web Search Providers</h3>
-        <p class="section-description">Enable or disable search providers for web search queries</p>
-
-        <div class="rule-item">
-          <div class="rule-info">
-            <span class="rule-name">SearXNG</span>
-            <span class="rule-desc">Privacy-focused meta-search engine (Local)</span>
-          </div>
-          <label class="toggle-switch">
-            <input
-              type="checkbox"
-              [checked]="store.searxngEnabled()"
-              (change)="toggleRule('searxng')"
-            />
-            <span class="slider"></span>
-          </label>
-        </div>
-
-        <div class="rule-item">
-          <div class="rule-info">
-            <span class="rule-name">DuckDuckGo</span>
-            <span class="rule-desc">Privacy-focused search engine (Free)</span>
-          </div>
-          <label class="toggle-switch">
-            <input
-              type="checkbox"
-              [checked]="store.duckduckgoEnabled()"
-              (change)="toggleRule('duckduckgo')"
-            />
-            <span class="slider"></span>
-          </label>
-        </div>
-
-        <div class="rule-item">
-          <div class="rule-info">
-            <span class="rule-name">Tavily</span>
-            <span class="rule-desc">AI-powered research search (API Key Required)</span>
-          </div>
-          <label class="toggle-switch">
-            <input
-              type="checkbox"
-              [checked]="store.tavilyEnabled()"
-              (change)="toggleRule('tavily')"
-            />
-            <span class="slider"></span>
-          </label>
-        </div>
-
-        <div class="rule-item">
-          <div class="rule-info">
-            <span class="rule-name">Serper</span>
-            <span class="rule-desc">Google Search API (API Key Required)</span>
-          </div>
-          <label class="toggle-switch">
-            <input
-              type="checkbox"
-              [checked]="store.serperEnabled()"
-              (change)="toggleRule('serper')"
-            />
-            <span class="slider"></span>
-          </label>
-        </div>
-      </div>
-
-      <div class="rules-section">
-        <h3>Content Extraction</h3>
-        <p class="section-description">
-          Enable or disable methods for extracting content from URLs
-        </p>
-
-        <div class="rule-item">
-          <div class="rule-info">
-            <span class="rule-name">Tavily Extract</span>
-            <span class="rule-desc">Cloud-based extraction (API Key Required)</span>
-          </div>
-          <label class="toggle-switch">
-            <input
-              type="checkbox"
-              [checked]="store.tavilyExtractEnabled()"
-              (change)="toggleRule('tavilyExtract')"
-            />
-            <span class="slider"></span>
-          </label>
-        </div>
-
-        <div class="rule-item">
-          <div class="rule-info">
-            <span class="rule-name">Local Extract</span>
-            <span class="rule-desc">Local content extraction (Free)</span>
-          </div>
-          <label class="toggle-switch">
-            <input
-              type="checkbox"
-              [checked]="store.localExtractEnabled()"
-              (change)="toggleRule('localExtract')"
-            />
-            <span class="slider"></span>
-          </label>
-        </div>
-      </div>
+      <p>Loading session rules...</p>
     </div>
   }
+
+  <!-- Error State -->
+  @if (rulesStore.error()) {
+    <div class="rules-error">
+      <p>{{ rulesStore.error() }}</p>
+    </div>
+  }
+
+  <!-- Rules Content -->
+  <div class="rules-wrapper">
+    @if (rulesStore.currentSessionId()) {
+      <div class="session-rules-header">
+        <div class="session-info">
+          <h3>Session Rules</h3>
+          <p>Customize rules for this chat session</p>
+        </div>
+      </div>
+    }
+
+    <!-- Web Search Providers Section -->
+    <div class="rules-section">
+      <h3>Web Search Providers</h3>
+      <p class="section-description">Enable or disable search providers for web search queries</p>
+
+      <div class="rule-item">
+        <div class="rule-info">
+          <span class="rule-name">SearXNG</span>
+          <span class="rule-desc">Privacy-focused meta-search engine (Local)</span>
+        </div>
+        <label class="toggle-switch">
+          <input
+            type="checkbox"
+            [checked]="rulesStore.rules()?.searxng ?? false"
+            (change)="toggleSessionRule('searxng')"
+          />
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="rule-item">
+        <div class="rule-info">
+          <span class="rule-name">DuckDuckGo</span>
+          <span class="rule-desc">Privacy-focused search engine (Free)</span>
+        </div>
+        <label class="toggle-switch">
+          <input
+            type="checkbox"
+            [checked]="rulesStore.rules()?.duckduckgo ?? false"
+            (change)="toggleSessionRule('duckduckgo')"
+          />
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="rule-item">
+        <div class="rule-info">
+          <span class="rule-name">Tavily</span>
+          <span class="rule-desc">AI-powered research search (API Key Required)</span>
+        </div>
+        <label class="toggle-switch">
+          <input
+            type="checkbox"
+            [checked]="rulesStore.rules()?.tavily ?? false"
+            (change)="toggleSessionRule('tavily')"
+          />
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="rule-item">
+        <div class="rule-info">
+          <span class="rule-name">Serper</span>
+          <span class="rule-desc">Google Search API (API Key Required)</span>
+        </div>
+        <label class="toggle-switch">
+          <input
+            type="checkbox"
+            [checked]="rulesStore.rules()?.serper ?? false"
+            (change)="toggleSessionRule('serper')"
+          />
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Content Extraction Section -->
+    <div class="rules-section">
+      <h3>Content Extraction</h3>
+      <p class="section-description">Enable or disable methods for extracting content from URLs</p>
+
+      <div class="rule-item">
+        <div class="rule-info">
+          <span class="rule-name">Tavily Extract</span>
+          <span class="rule-desc">Cloud-based extraction (API Key Required)</span>
+        </div>
+        <label class="toggle-switch">
+          <input
+            type="checkbox"
+            [checked]="rulesStore.rules()?.tavilyExtract ?? false"
+            (change)="toggleSessionRule('tavilyExtract')"
+          />
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="rule-item">
+        <div class="rule-info">
+          <span class="rule-name">Local Extract</span>
+          <span class="rule-desc">Local content extraction (Free)</span>
+        </div>
+        <label class="toggle-switch">
+          <input
+            type="checkbox"
+            [checked]="rulesStore.rules()?.localExtract ?? false"
+            (change)="toggleSessionRule('localExtract')"
+          />
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Loading Indicator -->
+    @if (rulesStore.loading()) {
+      <div class="rules-updating">
+        <p>Updating rules...</p>
+      </div>
+    }
+  </div>
 </div>

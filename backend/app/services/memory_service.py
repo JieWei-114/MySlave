@@ -3,11 +3,13 @@ from datetime import datetime
 from bson import ObjectId
 from bson.errors import InvalidId
 
+from app.config.settings import settings
 from app.core.db import memories_collection
 from app.services.embedding_service import cosine_similarity, embed
 from app.services.ollama_service import call_ollama_once
 
-MAX_CONTENT_LENGTH = 2000
+SEARCH_MEMORY_LIMIT = settings.SEARCH_MAX_MEMORY_LIMIT
+SEARCH_MEMORY_THRESHOLD = settings.SEARCH_MEMORY_MAX_THRESHOLD
 
 
 def serialize_memory(doc: dict) -> dict:
@@ -40,8 +42,8 @@ def add_memory(content: str, chat_sessionId: str, source: str = 'manual'):
     if not content or not content.strip():
         raise ValueError('Content cannot be empty')
 
-    if len(content) > MAX_CONTENT_LENGTH:
-        content = content[:MAX_CONTENT_LENGTH]
+    if len(content) > settings.MEMORY_MAX_CONTENT_LENGTH:
+        content = content[: settings.MEMORY_MAX_CONTENT_LENGTH]
 
     try:
         embedding = embed([content])[0]
@@ -93,7 +95,7 @@ def delete_memory(memory_id: str):
 
 
 def delete_memories_for_session(chat_sessionId: str) -> int:
-    """Delete all memories linked to a chat session. Returns deleted count."""
+    # Delete all memories linked to a chat session. Returns deleted count.
     result = memories_collection.delete_many({'chat_sessionId': chat_sessionId})
     return result.deleted_count
 
@@ -117,7 +119,9 @@ def delete_memories_for_session(chat_sessionId: str) -> int:
 #     return [serialize_memory(d[1]) for d in scored[:limit]]
 
 
-def search_memories(chat_sessionId: str, query: str, limit: int = 5, threshold: float = 0.5):
+def search_memories(
+    chat_sessionId: str, query: str, limit=SEARCH_MEMORY_LIMIT, threshold=SEARCH_MEMORY_THRESHOLD
+):
     if not query or not query.strip():
         return []
 
@@ -132,7 +136,7 @@ def search_memories(chat_sessionId: str, query: str, limit: int = 5, threshold: 
             'enabled': True,
             'embedding': {'$exists': True},
         }
-    ).limit(100)  # Limit initial fetch
+    ).limit(100)
 
     scored = []
     for doc in cursor:
@@ -157,7 +161,8 @@ async def compress_memories(chat_sessionId: str, model: str):
     text = '\n'.join(f'- {m["content"]}' for m in memories)
 
     prompt = f"""
-Summarize the following memories into a concise, structured long-term memory.
+Summarize the following memories into a concise.
+Structured in long-term memory.
 Do not lose important facts.
 Do not add explanation.
 
@@ -182,11 +187,11 @@ Memories:
 
 
 def should_remember(user_text: str, assistant_text: str) -> bool:
-    """Decide if a conversation turn should be saved as memory."""
-    if len(assistant_text.strip()) < 30:
+    # Decide if a conversation turn should be saved as memory
+    if len(assistant_text.strip()) < settings.MEMORY_MIN_ASSISTANT_LENGTH:
         return False
 
-    if len(user_text) + len(assistant_text) < 50:
+    if len(user_text) + len(assistant_text) < settings.MEMORY_MIN_CONVERSATION_LENGTH:
         return False
 
     # Check for reject patterns (case-insensitive, whole message)

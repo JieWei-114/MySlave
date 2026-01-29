@@ -7,10 +7,11 @@ import httpx
 from bs4 import BeautifulSoup
 from readability import Document
 
-# Hard guards
-MAX_CHARS = 10_000  # Cap returned text length
-MAX_BYTES = 10_000_000  # Cap download size (~10 MB)
-REQUEST_TIMEOUT = 20.0  # Seconds for connect+read
+from app.config.settings import settings
+
+MAX_CHARS = settings.LOCAL_EXTRACT_MAX_CHARS
+MAX_BYTES = settings.LOCAL_EXTRACT_MAX_BYTES
+REQUEST_TIMEOUT = settings.LOCAL_EXTRACT_TIMEOUT
 
 USER_AGENT = (
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
@@ -18,6 +19,7 @@ USER_AGENT = (
 )
 
 ALLOWED_CONTENT_TYPES = ('text/html', 'application/xhtml+xml')
+
 
 async def _fetch_html(url: str) -> Optional[str]:
     headers = {
@@ -53,6 +55,7 @@ async def _fetch_html(url: str) -> Optional[str]:
             print('[fetch_html ERROR]', type(e).__name__, e)
             return None
 
+
 def _extract_main_text(html: str) -> str:
     doc = Document(html)
     clean_html = doc.summary(html_partial=True)
@@ -60,12 +63,12 @@ def _extract_main_text(html: str) -> str:
     soup = BeautifulSoup(clean_html, 'lxml')
     text = soup.get_text('\n')
 
-    # Collapse excessive blank lines
     lines = [line.strip() for line in text.splitlines() if line.strip()]
     return '\n'.join(lines).strip()
 
+
 async def extract_url_local(url: str) -> str:
-    """Download and extract main text from a URL with safety limits."""
+    # Download and extract main text from a URL with safety limits.
 
     print('local_extract.py LOADED')
     print(f'extract_url_local CALLED with {url}')

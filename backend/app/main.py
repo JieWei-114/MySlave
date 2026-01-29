@@ -3,8 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.chat import router as chat_router
 from app.api.memory import router as memory_router
-from app.api.web import router as web_router
 from app.api.rules import router as rule_router
+from app.api.web import router as web_router
 from app.config.settings import settings
 from app.core.db import client
 

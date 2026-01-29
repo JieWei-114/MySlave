@@ -11,6 +11,12 @@ export class AutoResizeTextareaDirective {
   resize(): void {
     const textarea = this.el.nativeElement;
     textarea.style.height = 'auto';
-    textarea.style.height = textarea.scrollHeight + 'px';
+    const style = window.getComputedStyle(textarea);
+    const maxHeight = parseFloat(style.maxHeight || '0');
+    const max = Number.isFinite(maxHeight) && maxHeight > 0 ? maxHeight : Infinity;
+    const nextHeight = Math.min(textarea.scrollHeight, max);
+
+    textarea.style.height = `${nextHeight}px`;
+    textarea.style.overflowY = textarea.scrollHeight > max ? 'auto' : 'hidden';
   }
 }

@@ -34,14 +34,14 @@ export class MemoryApi {
 
   search(chatSessionId: string, q: string) {
     return this.http.get<any[]>(
-      `${this.config.apiBaseUrl}/memory/search?chat_sessionId=${chatSessionId}&q=${encodeURIComponent(q)}`
+      `${this.config.apiBaseUrl}/memory/search?chat_sessionId=${chatSessionId}&q=${encodeURIComponent(q)}`,
     );
   }
 
   compress(chatSessionId: string, model: string) {
     return this.http.post(
       `${this.config.apiBaseUrl}/memory/compress?chat_sessionId=${chatSessionId}&model=${model}`,
-      {}
+      {},
     );
   }
 }

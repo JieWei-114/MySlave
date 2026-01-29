@@ -7,7 +7,7 @@ from fastapi.responses import StreamingResponse
 
 from app.config.ai_models import AVAILABLE_MODELS
 from app.core.db import sessions_collection
-from app.models.dto import CreateSessionRequest, RenameSessionRequest
+from app.models.dto import CreateSessionRequest, RenameSessionRequest, ReorderSessionsRequest
 from app.services.chat_service import (
     add_message,
     build_prompt_with_memory,
@@ -109,3 +109,23 @@ def delete_chat_session(session_id: str):
     if not ok:
         raise HTTPException(status_code=404, detail='Session not found')
     return {'status': 'deleted'}
+
+
+@router.post('/reorder')
+def reorder_sessions(payload: ReorderSessionsRequest):
+    try:
+        sessions_collection.update_one(
+            {'id': '__order__'},
+            {
+                '$set': {
+                    'id': '__order__',
+                    'sessionIds': payload.sessionIds,
+                    'updated_at': datetime.utcnow(),
+                }
+            },
+            upsert=True,
+        )
+        return {'status': 'reordered'}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'Failed to reorder sessions: {str(e)}')

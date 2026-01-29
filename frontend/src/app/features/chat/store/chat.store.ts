@@ -1,4 +1,4 @@
-import { Injectable, signal, computed, inject, effect } from '@angular/core';
+import { Injectable, signal, computed, inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { PLATFORM_ID } from '@angular/core';
 
@@ -34,12 +34,11 @@ export class ChatStore {
   readonly availableModels = signal<AIModel[]>(AVAILABLE_MODELS);
   readonly draftMessage = signal('');
 
-  /** ============================
+  /* ============================
    *  Derived
-   *  ============================ */
+   * ============================ */
 
   readonly sessionList = computed(() => Object.values(this.sessions()));
-
   readonly sessionIds = computed(() => Object.keys(this.sessions()));
 
   readonly currentSession = computed(() => {
@@ -48,16 +47,13 @@ export class ChatStore {
   });
 
   readonly messageList = computed<ChatMessage[]>(() => this.currentSession()?.messages ?? []);
-
   readonly hasMessages = computed(() => this.messageList().length > 0);
-
   readonly isEmpty = computed(() => !this.hasMessages() && !this.loading());
-
   readonly canSendMessage = computed(() => !this.loading() && this.currentSessionId() !== null);
 
-    /** ============================
+  /* ============================
    *  Sidebar
-   *  ============================ */
+   * ============================ */
 
   readonly visibleSessions = computed(() => {
     const active = this.currentSessionId();
@@ -67,9 +63,9 @@ export class ChatStore {
     );
   });
 
-  /** ============================
+  /* ============================
    *  Draft handling
-   *  ============================ */
+   * ============================ */
 
   setDraftMessage(message: string): void {
     this.draftMessage.set(message);
@@ -85,9 +81,9 @@ export class ChatStore {
     this.draftMessage.set('');
   }
 
-  /** ============================
+  /* ============================
    *  Model Selection
-   *  ============================ */
+   * ============================ */
 
   setModel(model: AIModel): void {
     this.currentModel.set(model);
@@ -133,9 +129,9 @@ export class ChatStore {
     });
   }
 
-  /** ============================
+  /* ============================
    *  Session
-   *  ============================ */
+   * ============================ */
 
   selectSession(id: string): void {
     this.currentSessionId.set(id);
@@ -225,9 +221,24 @@ export class ChatStore {
     });
   }
 
-  /** ============================
+  reorderSessions(sessions: ChatSession[]): void {
+    const map: Record<string, ChatSession> = {};
+    for (const s of sessions) {
+      map[s.id] = s;
+    }
+    this.sessions.set(map);
+
+    const sessionIds = sessions.map((s) => s.id);
+    this.chatApi.reorderSessions(sessionIds).subscribe({
+      error: () => {
+        this.error.set('Failed to reorder sessions');
+      },
+    });
+  }
+
+  /* ============================
    *  Messages
-   *  ============================ */
+   * ============================ */
 
   private createMessage(role: 'user' | 'assistant', content: string): ChatMessage {
     return {
@@ -282,7 +293,7 @@ export class ChatStore {
         };
       });
 
-      /** real SSE streaming */
+      // real SSE streaming
       this.stopStreaming = this.chatApi.streamMessage(
         sessionId,
         content,
@@ -341,9 +352,9 @@ export class ChatStore {
     this.loading.set(false);
   }
 
-  /** ============================
+  /* ============================
    *  state
-   *  ============================ */
+   * ============================ */
 
   loadLatestMessages(sessionId: string): void {
     const session = this.sessions()[sessionId];
@@ -424,10 +435,9 @@ export class ChatStore {
     });
   }
 
-  
-  /** ============================
+  /* ============================
    *  Helpers
-   *  ============================ */
+   * ============================ */
 
   private pushUserMessage(id: string, content: string) {
     this.sessions.update((s) => ({

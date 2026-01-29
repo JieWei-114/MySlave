@@ -211,6 +211,7 @@
 .chat-input {
   display: flex;
   gap: var(--spacing-xs);
+  gap: 10px;
 }
 
 .chat-input textarea {
@@ -223,6 +224,8 @@
   border: none;
   transition: all var(--transition-base);
   overflow-y: auto;
+  min-height: 40px;
+  max-height: 180px;
 }
 
 .chat-input textarea:focus {
@@ -239,4 +242,32 @@
   background: var(--primary-lite);
   cursor: not-allowed;
   color: var(--gray-500);
+}
+
+.input-actions {
+  display: flex;
+  align-items: center;
+}
+
+.file-input-wrapper {
+  display: flex;
+  align-items: center;
+}
+
+.file-input {
+  display: none;
+}
+
+.btn-remove {
+  color: var(--error-color);
+}
+
+.file-meta {
+  margin-top: 10px;
+  color: var(--gray-300);
+  font-size: 12px;
+}
+
+.file-error {
+  color: var(--error-color);
 }

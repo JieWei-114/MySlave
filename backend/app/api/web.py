@@ -8,9 +8,9 @@ router = APIRouter(prefix='/web', tags=['web'])
 
 
 @router.get('/web-search')
-async def web_search(q: str = Query(...), limit: int = 5):
+async def web_search(q: str = Query(...), limit: int = None, session_id: str | None = None):
     try:
-        results = await maybe_web_search(q, limit)
+        results = await maybe_web_search(q, limit, session_id=session_id)
         return {
             'results': results,
             'quotas': {

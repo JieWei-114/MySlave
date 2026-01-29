@@ -76,8 +76,8 @@ export class MemoryStore {
         }
       },
       complete: () => {
-        this.compressing.set(false)
-        this.load(sessionId)
+        this.compressing.set(false);
+        this.load(sessionId);
       },
       error: () => this.compressing.set(false),
     });

@@ -5,10 +5,10 @@ from typing import Optional
 from app.config.web_providers.ddg import DuckDuckGoProvider
 from app.config.web_providers.local_extract import extract_url_local
 from app.config.web_providers.searxng import SearXNGProvider
-from app.config.web_providers.serper import SerperProvider
-from app.config.web_providers.tavily import TavilyProvider
+from app.config.web_providers.serper import SerperProvider, remaining_serper_quota
+from app.config.web_providers.tavily import TavilyProvider, remaining_tavily_quota
 from app.config.web_providers.tavily_extract import extract_url
-from app.core.db import rules_collection
+from app.core.db import rules_collection, sessions_collection
 
 logger = logging.getLogger(__name__)
 
@@ -18,9 +18,13 @@ ddg = DuckDuckGoProvider()
 tavily = TavilyProvider()
 
 
-def get_enabled_rules() -> dict:
-
+def get_enabled_rules(session_id: Optional[str] = None) -> dict:
     try:
+        if session_id:
+            session = sessions_collection.find_one({'id': session_id}, {'_id': 0, 'rules': 1})
+            if session and session.get('rules'):
+                return session['rules']
+
         rules = rules_collection.find_one({}, {'_id': 0})
         if not rules:
             #  Returns default (all enabled) if no rules are stored.
@@ -52,7 +56,7 @@ EXPLICIT_COMMANDS = {
 }
 
 AUTO_ROUTE_KEYWORDS = {
-    'serper': ['who is', 'ceo', 'today', 'latest', 'current', 'news'],
+    'serper': ['today', 'latest', 'current', 'news'],
     'tavily': ['research', 'deep dive', 'detailed'],
 }
 
@@ -63,20 +67,22 @@ URL_PATTERN = re.compile(
 
 
 def is_url(text: str) -> bool:
-    """Validate URL format."""
+    # Validate URL format
     match = URL_PATTERN.search(text.strip())
     return match is not None
 
 
 def extract_url_from_text(text: str) -> Optional[str]:
-    """Extract first URL found in text."""
+    # Extract first URL found in text
     match = URL_PATTERN.search(text.strip())
     return match.group(0) if match else None
 
 
-async def maybe_web_search(query: str, limit: int = 5) -> list[dict]:
+async def maybe_web_search(
+    query: str, limit: int = 5, session_id: Optional[str] = None
+) -> list[dict]:
     """
-    Smart web search routing with rule-based filtering.
+    web search routing with rule-based filtering.
 
     Priority:
     1. Check enabled rules - skip disabled providers
@@ -91,13 +97,16 @@ async def maybe_web_search(query: str, limit: int = 5) -> list[dict]:
         return []
 
     # Get current rule configuration
-    rules = get_enabled_rules()
+    rules = get_enabled_rules(session_id=session_id)
     logger.info(f'Current rules: {rules}')
+    logger.info(
+        f'Current quotas - Serper: {remaining_serper_quota()}, Tavily: {remaining_tavily_quota()}'
+    )
 
     query = query.strip()
     q_lower = query.lower()
 
-    # ===== Explicit commands =====
+    # Explicit commands
     for cmd, provider in EXPLICIT_COMMANDS.items():
         if cmd in q_lower:
             # Check if provider is enabled
@@ -113,7 +122,7 @@ async def maybe_web_search(query: str, limit: int = 5) -> list[dict]:
                 logger.error(f'{provider.name} search failed: {e}')
                 return []
 
-    # ===== Advance search: all enabled providers =====
+    # Advance search: all enabled providers
     if 'advance search' in q_lower:
         logger.info('Advance search triggered, querying enabled providers')
         results = []
@@ -144,7 +153,7 @@ async def maybe_web_search(query: str, limit: int = 5) -> list[dict]:
 
         return results[: limit * 2]
 
-    # ===== Auto routing =====
+    # Auto routing
     for provider_name, keywords in AUTO_ROUTE_KEYWORDS.items():
         if any(kw in q_lower for kw in keywords):
             # Check if the auto-routed provider is enabled
@@ -160,7 +169,7 @@ async def maybe_web_search(query: str, limit: int = 5) -> list[dict]:
                 logger.warning(f'{provider.name} auto-route failed: {e}')
                 break
 
-    # ===== Default: SearXNG → DuckDuckGo (if enabled) =====
+    # Default (if enabled)
     logger.info('Using default routing: SearXNG → DuckDuckGo')
 
     # Try SearXNG if enabled
@@ -211,13 +220,14 @@ async def maybe_web_search(query: str, limit: int = 5) -> list[dict]:
     logger.error('All search providers failed or disabled')
     return []
 
-async def maybe_extract(user_text: str) -> str:
+
+async def maybe_extract(user_text: str, session_id: Optional[str] = None) -> str:
     """
-    Smart URL extraction routing with rule-based filtering.
+    URL extraction routing with rule-based filtering.
 
     Priority:
     1. Check enabled rules - skip disabled extraction methods
-    2. Explicit commands ("tavily extract", "local extract", "extract both")
+    2. Explicit commands ("tavily extract", "local extract")
     3. Default: Tavily → Local fallback (if enabled)
     4. Returns empty string on all failures
     """
@@ -226,7 +236,9 @@ async def maybe_extract(user_text: str) -> str:
         return ''
 
     # Get current rule configuration
-    rules = get_enabled_rules()
+    rules = get_enabled_rules(session_id=session_id)
+    logger.info(f'Current rules: {rules}')
+    logger.info(f'Current quotas - Tavily: {remaining_tavily_quota()}')
 
     # Clean the text: replace newlines with spaces and remove extra padding
     cleaned_text = ' '.join(user_text.strip().split())
@@ -238,7 +250,7 @@ async def maybe_extract(user_text: str) -> str:
         logger.debug('No URL detected in extraction request')
         return ''
 
-    # ===== Explicit commands =====
+    # Explicit commands
     if 'tavily extract' in text_lower:
         if not rules.get('tavilyExtract', True):
             logger.warning('Tavily extract disabled by rules')
@@ -263,7 +275,7 @@ async def maybe_extract(user_text: str) -> str:
             logger.error(f'Local extract failed: {e}')
             return ''
 
-    # ===== Default: Tavily → Local fallback (if enabled) =====
+    # Default: Tavily → Local fallback (if enabled)
     logger.info(f'Default extraction for {url}: Tavily → Local')
 
     # Try Tavily if enabled

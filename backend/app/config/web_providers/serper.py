@@ -27,17 +27,22 @@ def consume_serper():
 class SerperProvider(WebSearchProvider):
     name = 'serper'
 
-    async def search(self, query: str, limit: int = 5) -> list[dict[str, Any]]:
+    async def search(self, query: str, limit: int = None) -> list[dict[str, Any]]:
         if not settings.SERPER_API_KEY:
             return []
+
+        if limit is None:
+            limit = settings.SERPER_LIMIT
 
         if remaining_serper_quota() <= 0:
             return []
 
+        timeout = httpx.Timeout(settings.SERPER_TIMEOUT)
+
         try:
-            async with httpx.AsyncClient(timeout=httpx.Timeout(15.0)) as client:
+            async with httpx.AsyncClient(timeout=timeout) as client:
                 res = await client.post(
-                    'https://google.serper.dev/search',
+                    f'{settings.SERPER_URL}/search',
                     headers={
                         'X-API-KEY': settings.SERPER_API_KEY,
                         'Content-Type': 'application/json',

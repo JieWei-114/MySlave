@@ -9,9 +9,13 @@ export class WebApi {
   private http = inject(HttpClient);
   private config = inject(AppConfigService);
 
-  webSearch(q: string): Observable<WebSearchResponse> {
+  webSearch(q: string, sessionId?: string | null): Observable<WebSearchResponse> {
+    const params = new URLSearchParams({ q: q });
+    if (sessionId) {
+      params.set('session_id', sessionId);
+    }
     return this.http.get<WebSearchResponse>(
-      `${this.config.apiBaseUrl}/web/web-search?q=${encodeURIComponent(q)}`,
+      `${this.config.apiBaseUrl}/web/web-search?${params.toString()}`,
     );
   }
 

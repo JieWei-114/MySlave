@@ -1,33 +1,38 @@
 <div class="web-search">
   <div class="web-search-controls">
-    <input [(ngModel)]="q" placeholder="Search the web..." (keydown.enter)="search()" />
+    <input
+      [ngModel]="q()"
+      (ngModelChange)="q.set($event)"
+      placeholder="Search the web..."
+      (keydown.enter)="search()"
+    />
     <div class="control-row">
-      <app-button (click)="search()" [disabled]="loading || !q.trim()">
-        {{ loading ? 'Searching…' : 'Search' }}
+      <app-button (click)="search()" [disabled]="loading() || !q().trim()">
+        {{ loading() ? 'Searching…' : 'Search' }}
       </app-button>
     </div>
   </div>
 
   <div class="result-list">
-    <div class="result" *ngFor="let r of results">
+    <div class="result" *ngFor="let r of results()">
       <b>{{ r.title }}</b>
       <p>{{ r.snippet }}</p>
       <button (click)="insert(r)">Insert into chat</button>
     </div>
     <div class="empty-state">
-      <div class="web-search-status" *ngIf="!loading && !results.length">No results yet</div>
+      <div class="web-search-status" *ngIf="!loading() && !results().length">No results yet</div>
     </div>
   </div>
 
-  <div class="quota-info" *ngIf="quotas">
+  <div class="quota-info" *ngIf="quotas()">
     <div class="quota-item">
       <span class="quota-label">Serper:</span>
-      <span class="quota-value">{{ quotas.serper_remaining }}/2500</span>
+      <span class="quota-value">{{ quotas()!.serper_remaining }}/2500</span>
       <span class="quota-note">(no renewal)</span>
     </div>
     <div class="quota-item">
       <span class="quota-label">Tavily:</span>
-      <span class="quota-value">{{ quotas.tavily_remaining }}/1000</span>
+      <span class="quota-value">{{ quotas()!.tavily_remaining }}/1000</span>
       <span class="quota-note">(monthly)</span>
     </div>
   </div>
