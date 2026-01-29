@@ -11,9 +11,6 @@ from app.services.memory_service import (
 )
 from app.services.web_search_service import maybe_extract, maybe_web_search
 
-MAX_PROMPT_LENGTH = 12000
-
-
 def create_session(title: str) -> dict:
     now = datetime.utcnow()
 
@@ -162,13 +159,12 @@ async def build_prompt_with_memory(
     }
 
     # --------------------------------------------------
-    # Detect explicit extract intent (VERY IMPORTANT)
+    # Detect explicit extract intent
     # --------------------------------------------------
     EXTRACT_KEYWORDS = [
         'extract',
         'local extract',
         'tavily extract',
-        'extract both',
     ]
 
     is_explicit_extract = any(k in user_lower for k in EXTRACT_KEYWORDS)

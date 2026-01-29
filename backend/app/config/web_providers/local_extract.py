@@ -24,11 +24,12 @@ async def _fetch_html(url: str) -> Optional[str]:
         'User-Agent': USER_AGENT,
         'Accept': 'text/html,application/xhtml+xml',
         'Accept-Language': 'en-US,en;q=0.9',
+        'Sec-Fetch-Site': 'none',
         # 'Referer': 'https://www.google.com/',
         # 'Accept-Encoding': 'identity',
     }
 
-    timeout = httpx.Timeout(20.0)
+    timeout = httpx.Timeout(REQUEST_TIMEOUT)
 
     async with httpx.AsyncClient(
         follow_redirects=True,
@@ -63,62 +64,11 @@ def _extract_main_text(html: str) -> str:
     lines = [line.strip() for line in text.splitlines() if line.strip()]
     return '\n'.join(lines).strip()
 
-async def extract_wikipedia(url: str) -> str:
-    """
-    Wikipedia-specific extractor (bypass Readability)
-    """
-
-    try:
-        content = None 
-        html = await _fetch_html(url)
-        if not html:
-            print('[wiki] html fetch failed')
-            return ''
-
-        soup = BeautifulSoup(html, 'lxml')
-
-        content = (
-            soup.select_one('#mw-content-text .mw-parser-output') \
-            or soup.select_one('.mw-parser-output')
-        )
-
-        print('[wiki] content found:', content is not None)
-
-        if not content:
-            return ''
-
-        # Remove tables, infoboxes, navboxes
-        # for tag in content.find_all(['table', 'sup', 'style', 'script']):
-        #     tag.decompose()
-
-        paragraphs = [
-            p.get_text(' ', strip=True) for p in content.find_all('p') if p.get_text(strip=True)
-        ]
-
-        print('[wiki] p count:', len(content.find_all('p')))
-        print('[wiki] extracted paragraphs:', len(paragraphs))
-
-        text = '\n\n'.join(paragraphs)
-
-        if not text.strip():
-            print('[wiki] fallback to container text')
-            text = content.get_text('\n', strip=True)
-
-        return text.strip()[:MAX_CHARS]
-
-    except Exception as e:
-        print('[extract_wikipedia ERROR]', e)
-        return ''
-
-
 async def extract_url_local(url: str) -> str:
     """Download and extract main text from a URL with safety limits."""
 
     print('local_extract.py LOADED')
     print(f'extract_url_local CALLED with {url}')
-
-    if 'wikipedia.org' in url:
-        return await extract_wikipedia(url)
 
     try:
         html = await _fetch_html(url)

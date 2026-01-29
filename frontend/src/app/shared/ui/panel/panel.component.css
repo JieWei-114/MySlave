@@ -3,7 +3,7 @@
   flex-direction: column;
   height: 100%;
   min-width: 390px;
-  max-width: 630px;
+  max-width: 600px;
 }
 
 .panel-tabs {
@@ -35,7 +35,7 @@
 
 .panel-button-w {
   padding: 10px;
-  border-radius: 0 0 10px 0;
+  border-radius: 0;
   cursor: pointer;
   transition: all 0.2s ease;
   background: var(--primary-lite);
@@ -47,6 +47,25 @@
 }
 
 .panel-button-w.active {
+  background: var(--primary-lite);
+  color: #ffffff;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.panel-button-r {
+  padding: 10px;
+  border-radius: 0 0 10px 0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: var(--primary-lite);
+  color: #ffffff;
+}
+
+.panel-button-r:hover {
+  color: var(--gray-400);
+}
+
+.panel-button-r.active {
   background: var(--primary-lite);
   color: #ffffff;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);

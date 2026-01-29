@@ -10,11 +10,19 @@
     </button>
     <button
       class="panel-button-w"
-      [class.active]="activeTab === 'webs'"
-      (click)="selectTab('webs')"
+      [class.active]="activeTab === 'web'"
+      (click)="selectTab('web')"
       title="Web Search"
     >
       Web Search
+    </button>
+    <button
+      class="panel-button-r"
+      [class.active]="activeTab === 'rules'"
+      (click)="selectTab('rules')"
+      title="Rules"
+    >
+      Rules
     </button>
     <button class="panel-close" (click)="onClose()" title="Close panel">✕</button>
   </div>
@@ -23,8 +31,11 @@
     <div class="panel-tab-content" *ngIf="activeTab === 'memory'">
       <app-memory-panel [sessionId]="sessionId" (close)="onClose()" />
     </div>
-    <div class="panel-tab-content" *ngIf="activeTab === 'webs'">
+    <div class="panel-tab-content" *ngIf="activeTab === 'web'">
       <app-web-search (close)="onClose()" />
+    </div>
+    <div class="panel-tab-content" *ngIf="activeTab === 'rules'">
+      <app-rules-panel (close)="onClose()" />
     </div>
   </div>
   <div class="panel-resize-handle"></div>
