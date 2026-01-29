@@ -23,10 +23,10 @@ class Settings(BaseSettings):
     MONGO_SERVER_SELECTION_TIMEOUT_MS: int = 5000
 
     # Web Search settings
-    SERPER_API_KEY: str | None = '28cce7f6afd6888838f13b0a4592b8131b51f56a'
+    SERPER_API_KEY: str | None = None
     SERPER_TOTAL_LIMIT: int = 2500
 
-    TAVILY_API_KEY: Optional[str] = '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'
+    TAVILY_API_KEY: Optional[str] = None
     TAVILY_MONTHLY_LIMIT: int = 1000
 
     SEARXNG_URL: Optional[str] = None  # e.g. http://localhost:8080
