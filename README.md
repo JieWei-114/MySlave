@@ -1,21 +1,21 @@
-# MySlave – Local AI Chat System (in progress)
+# MySlave – Local AI Assistant Platform
 
-A fully local, privacy-first chat application that puts your data in your hands. Built with **Angular + FastAPI + MongoDB**, combining modern frontend architecture with a powerful, scalable backend.
+A fully local, privacy-first AI assistant with advanced conversation management, persistent memory, custom rules, and intelligent web search. Built with **Angular 21 + FastAPI + MongoDB**, combining modern frontend architecture with a powerful, production-ready backend.
 
 ## Overview
 
-MySlave is a multi-session AI chat platform designed for users who value privacy and control. Chat with multiple AI models running locally via Ollama, access optional web search capabilities, and manage conversation memory—all without any data leaving your machine.
+MySlave is a comprehensive AI assistant platform designed for users who demand privacy, control, and customization. Chat with multiple local AI models via Ollama, define custom behavioral rules, maintain conversation memory, and optionally search the web—all while keeping your data completely local.
 
-### Key Capabilities
+### Key Features
 
-- **Multi-session chat** with persistent sidebar navigation
-- **Real-time streaming** responses with stop-mid-generation functionality
-- **Multi-model support**: Switch between Gemma, Llama, Qwen, Phi, and custom models
-- **Memory system**: Mark important messages for context-aware follow-ups
-- **Web search integration**: Optional search via Serper, Tavily, or local SearXNG with quota tracking
-- **Infinite scroll & lazy loading** for smooth conversation browsing
-- **Modern, responsive UI** with design system and smooth animations
-- **100% local execution**: No external services, no telemetry, no data uploads
+- **Multi-Model Chat** – Switch between Gemma, Llama, Qwen, Phi, and custom models
+- ** Memory System** – Mark and retrieve important messages for context-aware conversations
+- **Custom Rules** – Define system prompts and behavioral guidelines for AI responses
+- **Web Search** – Integrated search via Serper, Tavily, DuckDuckGo, or local SearXNG
+- **File Upload** – Extract and analyze content from documents (PDFs, DOCX, TXT, etc.)
+- **Real-Time Streaming** – Token-by-token responses with stop-mid-generation control
+- **Modern UI** – Clean, responsive interface with design system and smooth animations
+- **100% Local** – No external services, no telemetry, complete data privacy
 
 ## Tech Stack
 
@@ -62,29 +62,40 @@ MySlave is a multi-session AI chat platform designed for users who value privacy
 
 ### Chat Features
 
-- **Multi-session management** with persistent sidebar
-- **Real-time streaming responses** with token-by-token display
+- **Multi-session management** with persistent sidebar navigation
+- **Real-time streaming** with token-by-token display
 - **Stop generation mid-stream** to halt long responses
 - **Message history** with infinite scroll and lazy loading
 - **Session controls**: Rename, delete, and organize conversations
-- **Markdown rendering** for formatted responses
+- **Markdown rendering** with syntax highlighting
+- **File attachments**: Upload and analyze documents in conversations
 
 ### Memory System
 
-- **Memory panel** - Review and manage remembered messages
-- **Drag-to-resize** interface for flexible layout
-- **Mark messages as memorable** for future context
-- **Context-aware prompts** - Retrieved memories inform AI responses
-- **Visual connections** between sidebar and memory panel
+- **Persistent memory panel** with drag-to-resize interface
+- **Mark messages as memorable** for future context retrieval
+- **Smart memory retrieval** using embeddings for semantic search
+- **Context-aware AI responses** informed by retrieved memories
+- **Memory management UI** to review and delete stored memories
+- **Per-session memory isolation** for organized context
+
+### Rules System
+
+- **Custom system prompts** to define AI behavior and personality
+- **Pre-configured rule templates** for common use cases
+- **Multiple rules per session** with priority management
+- **Rule library** to save and reuse across conversations
+- **Dynamic rule injection** into AI context
+- **Visual rule management UI** with create/edit/delete operations
 
 ### Web Search (Optional)
 
-- **Smart provider routing**: Use Serper, Tavily, or local SearXNG
-- **Explicit search commands**: Control when search is triggered
-- **Keyword-based routing**: Automatic provider selection
-- **Provider fallbacks**: Seamlessly switch between services
-- **Quota tracking**: Monitor usage limits for paid services
-- **Local-first option**: SearXNG for privacy-focused search
+- **Multiple search providers**: Serper, Tavily, DuckDuckGo, SearXNG
+- **Smart provider routing** based on keywords and availability
+- **Quota tracking and management** for paid services
+- **Automatic fallback** to local SearXNG when limits reached
+- **Search result extraction** with context formatting
+- **Integrated search UI** with provider selection
 
 ### Advanced Features
 
@@ -188,8 +199,6 @@ npx ng serve
 # Pull desired models
 ollama pull gemma:7b
 ollama pull llama2:7b
-ollama pull neural-chat:7b
-ollama pull phi:latest
 
 # Verify Ollama is running
 curl http://localhost:11434/api/tags
@@ -202,45 +211,44 @@ cd searxng
 
 # Edit settings.yml and set a strong secret
 # server.secret_key: "your-32-character-random-string"
+docker --version
 
+docker info
 docker compose up -d
+docker ps
 docker compose logs -f
 ```
 
 **SearXNG URL**: http://localhost:8080
 
-## Configuration
-
-## Configuration
+## Configuration Guide
 
 ### Backend Environment Variables
 
-Create a `.env` file in the `backend/` directory:
+Create `.env` in `backend/` directory:
 
 ```env
-# MongoDB
+# MongoDB Configuration
 MONGO_URI=mongodb://127.0.0.1:27017
 DB_NAME=myslave
 
-# Ollama
+# Ollama Configuration
 OLLAMA_URL=http://localhost:11434
 
-# CORS
-CORS_ORIGINS=["http://localhost:4200"]
+# CORS Settings
+CORS_ORIGINS=["http://localhost:4200","http://127.0.0.1:4200"]
 
-# Optional: Web Search API Keys
-SERPER_API_KEY=your_serper_key_here
-TAVILY_API_KEY=your_tavily_key_here
+# Web Search API Keys (Optional)
+SERPER_API_KEY=your_serper_api_key_here
+TAVILY_API_KEY=your_tavily_api_key_here
 SEARXNG_URL=http://localhost:8080
 
-# Quotas
+# Search Quotas
 SERPER_TOTAL_LIMIT=2500
 TAVILY_MONTHLY_LIMIT=1000
 ```
 
-Or edit [backend/app/config/settings.py](backend/app/config/settings.py) directly.
-
-### Add Custom AI Models
+### Customizing AI Models
 
 Edit [backend/app/config/ai_models.py](backend/app/config/ai_models.py):
 
@@ -249,86 +257,126 @@ AVAILABLE_MODELS = [
     {
         "id": "gemma:7b",
         "name": "Gemma 7B",
-        "description": "Google's lightweight model",
-        "size": "7B"
+        "description": "Google's efficient language model",
+        "size": "7B",
+        "context_length": 8192
+    },
+    {
+        "id": "llama2:13b",
+        "name": "Llama 2 13B",
+        "description": "Meta's powerful open model",
+        "size": "13B",
+        "context_length": 4096
     },
     # Add your custom models here
 ]
 ```
 
-### Web Search Configuration
+### Adding Web Search Providers
 
-Set API keys for optional web search providers:
+Create new provider in [backend/app/config/web_providers/](backend/app/config/web_providers/):
 
-**Serper** (Google Search)
+```python
+from .base import WebSearchProvider
 
-- Get key at: https://serper.dev
-- Set `SERPER_API_KEY` in `.env`
-- Default quota: 2500 requests/month
+class CustomProvider(WebSearchProvider):
+    async def search(self, query: str) -> dict:
+        # Implement your search logic
+        pass
+```
 
-**Tavily** (Real-time search)
+Register in [backend/app/services/web_search_service.py](backend/app/services/web_search_service.py).
 
-- Get key at: https://tavily.com
-- Set `TAVILY_API_KEY` in `.env`
-- Default quota: 1000 requests/month
+## Development
 
-**SearXNG** (Self-hosted, no keys needed)
+### Frontend Development
 
-- Run locally with Docker Compose
-- Set `SEARXNG_URL=http://localhost:8080`
-- Fallback when other providers are unavailable
-
-## 🛠️ Development & Code Quality
-
-### Frontend
-
-**Prettier** - Code formatting
+**Run Development Server**
 
 ```bash
 cd frontend
-
-# Check formatting
-npm run format:check
-
-# Auto-fix formatting
-npm run format:fix
+npx ng serve
+# Access at http://localhost:4200
 ```
 
-### Backend
+**Build for Production**
 
-**Ruff** - Linting and formatting
+```bash
+npm run build
+# Output in frontend/dist/
+```
+
+**Code Quality**
+
+```bash
+# Format code with Prettier
+npm run format:check  # Check formatting
+npm run format:fix    # Auto-fix formatting
+
+# Lint code
+npx ng lint
+```
+
+**Testing**
+
+```bash
+npm test              # Run unit tests
+npm run test:coverage # Generate coverage report
+```
+
+### Backend Development
+
+**Run Development Server**
 
 ```bash
 cd backend
+source venv/bin/activate  # Windows: venv\Scripts\activate
+python -m uvicorn app.main:app --reload
+# Access at http://127.0.0.1:8000
+```
 
-# Lint and sort imports
+**Code Quality**
+
+```bash
+# Lint with Ruff
 ruff check --fix .
 
 # Format code
 ruff format .
+
+# Run all checks
+ruff check . && ruff format .
 ```
 
-Settings configured in [backend/pyproject.toml](backend/pyproject.toml).
+**Testing**
+
+```bash
+pytest                    # Run all tests
+pytest --cov=app         # With coverage
+pytest -v tests/         # Verbose output
+```
 
 ## Privacy & Security
 
 **MySlave is 100% local by design:**
 
-- No cloud services
-- No external API calls (except optional web search)
-- No telemetry or tracking
-- No data uploads
-- All data stored locally in MongoDB
-- No third-party analytics
-- Full encryption-ready with MongoDB
+- No cloud services or external dependencies (except optional web search)
+- No telemetry, tracking, or analytics
+- No data uploads to third-party servers
+- All conversations stored locally in MongoDB
+- Ollama models run entirely on your machine
+- Full control over your data and AI interactions
 
-**Data Storage**:
+**Optional External Services:**
 
-- Chat history: Local MongoDB
-- Session data: Local MongoDB
-- Memory markers: Local MongoDB
-- User preferences: Browser local storage
-- Web search quotas: Local MongoDB
+- Web search providers (Serper, Tavily) – Only when explicitly used
+- SearXNG & DuckDuckGo– Self-hosted, fully local alternative
+
+**Security Best Practices:**
+
+- Use HTTPS with reverse proxy (nginx, Caddy)
+- Configure firewall rules if exposing to network
+- Set strong `secret_key` for SearXNG
 
 ## Troubleshooting
 
@@ -382,44 +430,16 @@ mongosh myslave
 - Review quotas in MongoDB: `serper_quota`, `tavily_quota`
 - Check backend logs for API errors
 
-## API Documentation
+### File Upload Issues
 
-**Interactive Swagger UI**:  
-http://127.0.0.1:8000/docs
+- Verify file extraction service is configured
+- Check supported formats: PDF, DOCX, TXT, MD, CSV
+- Review file size limits in backend configuration
 
-See Swagger docs for full endpoint details and request/response schemas.
+## Additional Resources
 
-## Project Structure
-
-```
-MySlave/
-├── backend/                    # FastAPI application
-│   ├── app/
-│   │   ├── api/               # API route handlers
-│   │   ├── services/          # Business logic
-│   │   ├── models/            # Data models & DTOs
-│   │   ├── config/            # Settings & configuration
-│   │   └── core/              # Database & utilities
-│   ├── requirements.txt        # Python dependencies
-│   └── pyproject.toml         # Project configuration
-│
-├── frontend/                   # Angular application
-│   ├── src/
-│   │   ├── app/
-│   │   │   ├── features/      # Feature modules (chat, memory, tools)
-│   │   │   ├── shared/        # Shared components & pipes
-│   │   │   ├── core/          # Guards, interceptors, services
-│   │   │   └── shell/         # App shell/layout
-│   │   └── styles.css         # Global styles & variables
-│   ├── angular.json           # Angular build config
-│   └── package.json           # NPM dependencies
-│
-├── searxng/                    # Optional local search setup
-│   ├── docker-compose.yml
-│   └── settings.yml
-│
-└── README.md                   # This file
-```
+- **Interactive API Docs**: http://127.0.0.1:8000/docs (Swagger UI)
+- **Alternative API Docs**: http://127.0.0.1:8000/redoc (ReDoc)
 
 ## Acknowledgments
 
@@ -437,14 +457,34 @@ Built with incredible open-source projects:
 A: No. MySlave is 100% local. Optional web search is the only external component, and you can disable it or use the local SearXNG version.
 
 **Q: How much RAM do I need?**  
-A: Minimum 8GB recommended. Model size varies:
+A: Minimum 8GB recommended. Model memory usage varies:
 
-- 7B models: ~6-8GB
-- 13B models: ~10-12GB
-- Running multiple services: 16GB+ recommended
+- 7B models: ~6-8GB RAM
+- 13B models: ~10-12GB RAM
+- 33B+ models: 20GB+ RAM
+- Multiple services running: 16GB+ recommended
+
+**Q: Can I use different AI models?**  
+A: Yes! Any Ollama-compatible model works. Pull models with `ollama pull <model>` and add them to [backend/app/config/ai_models.py](backend/app/config/ai_models.py).
 
 **Q: How do I backup my conversations?**  
-A: All data is in MongoDB. Backup your MongoDB data directory or use `mongodump`/`mongorestore`.
+A: Use MongoDB backup tools:
+
+```bash
+mongodump --db myslave --out backup/
+mongorestore --db myslave backup/myslave/
+```
 
 **Q: Can I deploy this to a server?**  
-A: Yes, but ensure security (authentication, HTTPS, firewalls). See backend configuration for CORS and security settings.
+A: Yes, but ensure proper security:
+
+- Enable authentication
+- Use HTTPS (reverse proxy with nginx/Caddy)
+- Configure firewall rules
+- Set strong MongoDB passwords
+- Update CORS settings in backend
+
+**Q: Does this work offline?**  
+A: Yes! Everything except web search works completely offline. For offline search, use SearXNG.
+
+---

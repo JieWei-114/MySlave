@@ -1,14 +1,34 @@
-import { Directive, ElementRef, HostListener } from '@angular/core';
+import {
+  Directive,
+  ElementRef,
+  HostListener,
+  AfterViewInit,
+  Inject,
+  PLATFORM_ID,
+} from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 
 @Directive({
   selector: 'textarea[appAutoResize]',
   standalone: true,
 })
-export class AutoResizeTextareaDirective {
-  constructor(private el: ElementRef<HTMLTextAreaElement>) {}
+export class AutoResizeTextareaDirective implements AfterViewInit {
+  constructor(
+    private el: ElementRef<HTMLTextAreaElement>,
+    @Inject(PLATFORM_ID) private platformId: any,
+  ) {}
+
+  ngAfterViewInit(): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+    // Resize on initial load to handle pre-filled content
+    setTimeout(() => this.resize(), 0);
+  }
 
   @HostListener('input')
+  @HostListener('ngModelChange')
   resize(): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+
     const textarea = this.el.nativeElement;
     textarea.style.height = 'auto';
     const style = window.getComputedStyle(textarea);

@@ -1,9 +1,20 @@
 export type ChatRole = 'user' | 'assistant';
+
+export interface AssistantMeta {
+  reasoning?: string;
+  citations?: any[];
+  toolsUsed?: string[];
+}
+
 export interface ChatMessage {
   role: ChatRole;
   content: string;
   created_at: string;
-
+  meta?: AssistantMeta;
+  attachment?: {
+    filename: string;
+    content: string;
+  };
   remembered?: boolean;
 }
 

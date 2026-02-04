@@ -8,14 +8,15 @@ class ChatMessage(BaseModel):
     role: str
     content: str
     created_at: datetime = Field(default_factory=datetime.utcnow)
+    meta: AssistantMeta | None = None
 
 
 class SessionRules(BaseModel):
     searxng: bool = True
     duckduckgo: bool = True
-    tavily: bool = True
-    serper: bool = True
-    tavilyExtract: bool = True
+    tavily: bool = False
+    serper: bool = False
+    tavilyExtract: bool = False
     localExtract: bool = True
 
 
@@ -26,3 +27,9 @@ class ChatSession(BaseModel):
     created_at: datetime
     updated_at: datetime
     rules: SessionRules = Field(default_factory=SessionRules)
+
+
+class AssistantMeta(BaseModel):
+    reasoning: str | None = None
+    citations: list[dict] | None = None
+    tools_used: list[str] | None = None

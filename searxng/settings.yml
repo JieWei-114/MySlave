@@ -8,9 +8,43 @@ server:
 search:
   default_lang: "en"
   safe_search: 0
+  formats:
+    - html
+    - json 
 
 ui:
   static_use_hash: true
+
+botdetection:
+  enabled: false
+
+limiter:
+  enabled: false
+
+# engines:
+#   - name: google
+#     disabled: false
+
+#   - name: bing
+#     disabled: false
+
+#   - name: duckduckgo
+#     disabled: false
+
+#   - name: startpage
+#     disabled: true
+
+#   - name: qwant
+#     disabled: true
+
+#   - name: radio_browser
+#     disabled: true
+
+#   - name: torch
+#     disabled: true
+
+#   - name: ahmia
+#     disabled: true
 
 
 # docker compose up -d

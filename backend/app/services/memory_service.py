@@ -1,15 +1,19 @@
+import logging
 from datetime import datetime
 
 from bson import ObjectId
 from bson.errors import InvalidId
 
 from app.config.settings import settings
-from app.core.db import memories_collection
+from app.core.db import memories_collection, sessions_collection
 from app.services.embedding_service import cosine_similarity, embed
 from app.services.ollama_service import call_ollama_once
 
-SEARCH_MEMORY_LIMIT = settings.SEARCH_MAX_MEMORY_LIMIT
-SEARCH_MEMORY_THRESHOLD = settings.SEARCH_MEMORY_MAX_THRESHOLD
+logger = logging.getLogger(__name__)
+
+SEARCH_LIMIT = settings.MEMORY_SEARCH_LIMIT
+SEARCH_THRESHOLD = settings.MEMORY_SEARCH_THRESHOLD
+MAX_CHARS_PER_ITEM = settings.MEMORY_MAX_CHARS_PER_ITEM
 
 
 def serialize_memory(doc: dict) -> dict:
@@ -23,19 +27,16 @@ def serialize_memory(doc: dict) -> dict:
     }
 
 
-# def add_memory(content: str, chat_sessionId: str, source: str = 'manual'):
-#     embedding = embed(content)
-#     memory = {
-#         'chat_sessionId': chat_sessionId,
-#         'content': content,
-#         'embedding': embedding,
-#         'source': source,
-#         'enabled': True,
-#         'created_at': datetime.utcnow(),
-#     }
-#     result = memories_collection.insert_one(memory)
-#     memory['_id'] = result.inserted_id
-#     return serialize_memory(memory)
+def get_session_memory_limit(session_id: str) -> int | None:
+    """Get custom memory search limit for a session, return None if not set"""
+    try:
+        session = sessions_collection.find_one({'id': session_id}, {'rules.memorySearchLimit': 1})
+        if session and session.get('rules'):
+            return session['rules'].get('memorySearchLimit')
+        return None
+    except Exception as e:
+        logger.error(f'Error fetching memory limit for session {session_id}: {e}')
+        return None
 
 
 def add_memory(content: str, chat_sessionId: str, source: str = 'manual'):
@@ -100,34 +101,34 @@ def delete_memories_for_session(chat_sessionId: str) -> int:
     return result.deleted_count
 
 
-# def search_memories(chat_sessionId: str, query: str, limit: int = 5):
-#     query_vec = embed(query)
-
-#     cursor = memories_collection.find({
-#         'chat_sessionId': chat_sessionId,
-#         'enabled': True,
-#         'embedding': {'$exists': True},
-#     })
-
-#     scored = []
-#     for doc in cursor:
-#         score = cosine_similarity(query_vec, doc['embedding'])
-#         scored.append((score, doc))
-
-#     scored.sort(key=lambda x: x[0], reverse=True)
-
-#     return [serialize_memory(d[1]) for d in scored[:limit]]
-
-
-def search_memories(
-    chat_sessionId: str, query: str, limit=SEARCH_MEMORY_LIMIT, threshold=SEARCH_MEMORY_THRESHOLD
-):
+def search_memories(chat_sessionId: str, query: str, limit: int = None, threshold: float = None):
+    """
+    Search memories using semantic similarity.
+    """
     if not query or not query.strip():
         return []
 
+    # Use session-specific limit if set, otherwise use settings default
+    if limit is None:
+        session_limit = get_session_memory_limit(chat_sessionId)
+        limit = session_limit or settings.MEMORY_SEARCH_LIMIT
+
+    # Use threshold from settings (can be customized later per session)
+    if threshold is None:
+        threshold = settings.MEMORY_SEARCH_THRESHOLD
+
+    logger.info(
+        'Memory search start (query_len=%s, limit=%s, threshold=%s)',
+        len(query),
+        limit,
+        threshold,
+        extra={'session_id': chat_sessionId},
+    )
+
     try:
         query_vec = embed([query])[0]
-    except Exception:
+    except Exception as e:
+        logger.error(f'Failed to embed query: {e}')
         return []
 
     cursor = memories_collection.find(
@@ -143,13 +144,25 @@ def search_memories(
         try:
             score = cosine_similarity(query_vec, doc['embedding'])
             if score >= threshold:
+                # Truncate content to max chars per item
+                content = doc.get('content', '')
+                if len(content) > MAX_CHARS_PER_ITEM:
+                    doc['content'] = content[:MAX_CHARS_PER_ITEM] + '...'
+
                 scored.append((score, doc))
         except Exception:
             continue
 
     scored.sort(key=lambda x: x[0], reverse=True)
 
-    return [serialize_memory(d[1]) for d in scored[:limit]]
+    results = [serialize_memory(d[1]) for d in scored[:limit]]
+    logger.info(
+        'Memory search results (matched=%s, returned=%s)',
+        len(scored),
+        len(results),
+        extra={'session_id': chat_sessionId},
+    )
+    return results
 
 
 async def compress_memories(chat_sessionId: str, model: str):
@@ -229,10 +242,10 @@ async def auto_memory_if_needed(
     model: str,
 ):
     if not should_remember(user_text, assistant_text):
-        print('Auto Memory PASSED')
+        logger.debug('Auto memory criteria not met, skipping')
         return None
 
-    print('Auto Memory TRIGGERED')
+    logger.info('Auto memory triggered for this conversation')
 
     combined = f'User: {user_text}\nAssistant: {assistant_text}'
 
@@ -245,5 +258,5 @@ async def auto_memory_if_needed(
             source='auto',
         )
     except Exception as e:
-        print(f'Failed to add auto memory: {e}')
+        logger.error(f'Failed to add auto memory: {e}')
         return None

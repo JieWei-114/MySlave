@@ -240,17 +240,24 @@ export class ChatStore {
    *  Messages
    * ============================ */
 
-  private createMessage(role: 'user' | 'assistant', content: string): ChatMessage {
+  private createMessage(
+    role: 'user' | 'assistant',
+    content: string,
+    attachment?: { filename: string; content: string },
+  ): ChatMessage {
     return {
       role,
       content,
       created_at: new Date().toISOString(),
+      attachment: attachment
+        ? { filename: attachment.filename, content: attachment.content }
+        : undefined,
     };
   }
 
   stopStreaming: (() => void) | null = null;
 
-  sendMessage(content: string): void {
+  sendMessage(content: string, attachment?: { filename: string; content: string }): void {
     if (!content.trim()) return;
 
     const tempId = this.currentSessionId();
@@ -267,54 +274,91 @@ export class ChatStore {
     this.error.set('');
 
     const startStreaming = (sessionId: string) => {
-      const session = this.sessions()[sessionId] ?? {
-        id: sessionId,
-        title: generatedTitle,
-        messages: [],
-      };
+      const startSse = () => {
+        const session = this.sessions()[sessionId] ?? {
+          id: sessionId,
+          title: generatedTitle,
+          messages: [],
+        };
 
-      this.sessions.update((s) => ({
-        ...s,
-        [sessionId]: {
-          ...session,
-          messages: [...session.messages, this.createMessage('user', content)],
-        },
-      }));
-
-      let assistantIndex = -1;
-      this.sessions.update((s) => {
-        assistantIndex = s[sessionId].messages.length;
-        return {
+        this.sessions.update((s) => ({
           ...s,
           [sessionId]: {
-            ...s[sessionId],
-            messages: [...s[sessionId].messages, this.createMessage('assistant', '')],
+            ...session,
+            messages: [...session.messages, this.createMessage('user', content, attachment)],
           },
-        };
-      });
+        }));
 
-      // real SSE streaming
-      this.stopStreaming = this.chatApi.streamMessage(
-        sessionId,
-        content,
-        this.currentModel().id,
-        (token) => {
-          this.sessions.update((s) => {
-            const msgs = [...s[sessionId].messages];
-            msgs[assistantIndex] = {
-              ...msgs[assistantIndex],
-              content: msgs[assistantIndex].content + token,
-            };
-            return { ...s, [sessionId]: { ...s[sessionId], messages: msgs } };
-          });
-        },
-        () => {
-          this.loading.set(false);
-          this.stopStreaming = null;
+        let assistantIndex = -1;
+        this.sessions.update((s) => {
+          assistantIndex = s[sessionId].messages.length;
+          return {
+            ...s,
+            [sessionId]: {
+              ...s[sessionId],
+              messages: [...s[sessionId].messages, this.createMessage('assistant', '')],
+            },
+          };
+        });
 
-          this.memoryStore.reload(sessionId);
-        },
-      );
+        // real SSE streaming
+        this.stopStreaming = this.chatApi.streamMessage(
+          sessionId,
+          content,
+          this.currentModel().id,
+          (token) => {
+            this.sessions.update((s) => {
+              const msgs = [...s[sessionId].messages];
+              msgs[assistantIndex] = {
+                ...msgs[assistantIndex],
+                content: msgs[assistantIndex].content + token,
+              };
+              return { ...s, [sessionId]: { ...s[sessionId], messages: msgs } };
+            });
+          },
+
+          (reasoning) => {
+            this.sessions.update((s) => {
+              const msgs = [...s[sessionId].messages];
+
+              msgs[assistantIndex] = {
+                ...msgs[assistantIndex],
+                meta: {
+                  ...(msgs[assistantIndex].meta ?? {}),
+                  reasoning,
+                },
+              };
+
+              return {
+                ...s,
+                [sessionId]: {
+                  ...s[sessionId],
+                  messages: msgs,
+                },
+              };
+            });
+          },
+          () => {
+            this.loading.set(false);
+            this.stopStreaming = null;
+
+            this.memoryStore.reload(sessionId);
+          },
+        );
+      };
+
+      if (attachment && attachment.content) {
+        this.chatApi.attachFile(sessionId, attachment).subscribe({
+          next: () => startSse(),
+          error: () => {
+            this.error.set('Failed to attach file');
+            this.loading.set(false);
+          },
+        });
+        return;
+      }
+
+      startSse();
     };
 
     if (isTempSession) {
@@ -350,6 +394,48 @@ export class ChatStore {
     this.stopStreaming?.();
     this.stopStreaming = null;
     this.loading.set(false);
+  }
+
+  removeMessagesFrom(startIndex: number): void {
+    const sessionId = this.currentSessionId();
+    if (!sessionId) return;
+
+    this.sessions.update((s) => {
+      const session = s[sessionId];
+      if (!session) return s;
+
+      return {
+        ...s,
+        [sessionId]: {
+          ...session,
+          messages: session.messages.slice(0, startIndex),
+        },
+      };
+    });
+  }
+
+  rememberMessage(message: ChatMessage): void {
+    const sessionId = this.currentSessionId();
+    if (!sessionId || !message?.content || message.remembered) return;
+
+    this.memoryStore.addManual(message.content);
+
+    this.sessions.update((sessions) => {
+      const session = sessions[sessionId];
+      if (!session) return sessions;
+
+      const updatedMessages = session.messages.map((m) =>
+        m.created_at === message.created_at ? { ...m, remembered: true } : m,
+      );
+
+      return {
+        ...sessions,
+        [sessionId]: {
+          ...session,
+          messages: updatedMessages,
+        },
+      };
+    });
   }
 
   /* ============================

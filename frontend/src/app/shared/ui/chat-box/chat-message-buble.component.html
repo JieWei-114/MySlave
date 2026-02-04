@@ -1,14 +1,69 @@
-<div class="bubble" [class.user]="isUser" [class.assistant]="isAssistant">
-  <div class="content">
-    {{ message.content }}
+<div
+  class="bubble"
+  [class.user]="isUser"
+  [class.assistant]="isAssistant"
+  [class.editing]="isEditing"
+>
+  <!-- View Mode -->
+  <div class="content" *ngIf="!isEditing">
+    <!-- Reasoning Section -->
+    <div class="reasoning-section" *ngIf="isAssistant && message.meta as meta">
+      <button
+        class="reasoning-toggle"
+        (click)="toggleReasoning()"
+        title="Toggle reasoning visibility"
+      >
+        <span class="reasoning-icon">
+          {{ showReasoning ? '▼' : '▶' }}
+        </span>
+        <span class="reasoning-label">AI Thinking Process</span>
+      </button>
+
+      <div class="reasoning-content" *ngIf="showReasoning && meta.reasoning">
+        {{ meta.reasoning }}
+      </div>
+    </div>
+
+    <!-- Attachment -->
+    <div class="attachment" *ngIf="message.attachment?.filename">
+      {{ message.attachment?.filename }}
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      {{ message.content }}
+    </div>
   </div>
 
-  <button
-    class="remember"
-    *ngIf="isAssistant || isUser"
-    (click)="remember()"
-    title="Save to memory"
-  >
-    {{ message.remembered ? 'Saved' : 'Remember' }}
-  </button>
+  <!-- Edit Mode -->
+  <div class="edit-container" *ngIf="isEditing">
+    <textarea
+      [(ngModel)]="editedContent"
+      class="edit-textarea"
+      appAutoResize
+      placeholder="Edit your message..."
+      (keydown.enter)="onEnterKey($event)"
+      (keydown.escape)="cancelEdit()"
+    ></textarea>
+
+    <div class="edit-actions">
+      <button class="btn-edit-action btn-cancel" (click)="cancelEdit()">Cancel</button>
+      <button
+        class="btn-edit-action btn-resend"
+        (click)="saveAndResend()"
+        [disabled]="!editedContent.trim()"
+      >
+        Resend
+      </button>
+    </div>
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="message-actions" *ngIf="!isEditing">
+    <button class="remember" (click)="remember()" *ngIf="isUser || isAssistant">
+      {{ message.remembered ? 'Saved' : 'Remember' }}
+    </button>
+
+    <button class="edit" *ngIf="isUser && isLastUserMessage" (click)="startEdit()">Edit</button>
+  </div>
 </div>

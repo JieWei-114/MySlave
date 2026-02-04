@@ -1,26 +1,48 @@
+import json
+import logging
 from datetime import datetime
 from typing import Optional
 from urllib.parse import quote
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, File, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
 
 from app.config.ai_models import AVAILABLE_MODELS
 from app.core.db import sessions_collection
-from app.models.dto import CreateSessionRequest, RenameSessionRequest, ReorderSessionsRequest
+from app.config.settings import settings
+from app.models.dto import (
+    AttachFileRequest,
+    CreateSessionRequest,
+    RenameSessionRequest,
+    ReorderSessionsRequest,
+)
 from app.services.chat_service import (
-    add_message,
-    build_prompt_with_memory,
     create_session,
     delete_session,
     get_session,
     list_sessions,
     rename_session,
+    stream_chat_reply,
 )
-from app.services.memory_service import auto_memory_if_needed
-from app.services.ollama_service import stream_ollama
+from app.services.file_extraction_service import extract_text_from_file, truncate_content
 
 router = APIRouter(prefix='/chat', tags=['chat'])
+logger = logging.getLogger(__name__)
+
+
+def detect_file_type(filename: str) -> str:
+    lower = filename.lower()
+    if lower.endswith('.pdf'):
+        return 'PDF'
+    if lower.endswith(('.docx', '.doc')):
+        return 'Word'
+    if lower.endswith(('.txt', '.md')):
+        return 'Text'
+    if lower.endswith(('.json', '.yaml', '.yml')):
+        return 'Config'
+    if lower.endswith(('.py', '.js', '.ts', '.java', '.cpp')):
+        return 'Code'
+    return 'unknown'
 
 
 @router.get('/models')
@@ -48,33 +70,45 @@ def get_chat_session(session_id: str):
 
 @router.get('/{session_id}/stream')
 async def stream_message(session_id: str, content: str, model: str):
-    try:
-        add_message(session_id, 'user', content)
-    except ValueError:
-        raise HTTPException(status_code=404, detail='Session not found')
-
-    # build prompt with memory
-    prompt = await build_prompt_with_memory(content, chat_sessionId=session_id)
-
     async def event_generator():
-        assistant_text = ''
+        async for chunk in stream_chat_reply(session_id, content, model):
 
-        async for token in stream_ollama(prompt, model=model):
-            assistant_text += token
-            yield f'data: {quote(token)}\n\n'
+            if isinstance(chunk, bytes):
+                chunk = chunk.decode("utf-8")
 
-        add_message(session_id, 'assistant', assistant_text)
+            chunk = chunk.strip()
+            if not chunk:
+                continue
 
-        await auto_memory_if_needed(
-            chat_sessionId=session_id,
-            user_text=content,
-            assistant_text=assistant_text,
-            model=model,
-        )
+            try:
+                payload = json.loads(chunk)
 
-        yield 'event: done\ndata: end\n\n'
+                if payload.get('type') == 'done':
+                    yield (
+                        "event: done\n"
+                        f"data: {json.dumps(payload)}\n\n"
+                    )
 
-    return StreamingResponse(event_generator(), media_type='text/event-stream')
+                elif payload.get('type') == 'token':
+                    yield (
+                        "event: token\n"
+                        f"data: {json.dumps(payload['data'])}\n\n"
+                    )
+
+                elif payload.get('type') == 'error':
+                    yield (
+                        "event: error\n"
+                        f"data: {json.dumps(payload)}\n\n"
+                    )
+
+            except json.JSONDecodeError:
+                # normal token
+                yield f"data: {quote(chunk)}\n\n"
+
+    return StreamingResponse(
+        event_generator(),
+        media_type='text/event-stream',
+    )
 
 
 @router.get('/{session_id}/messages')
@@ -129,3 +163,82 @@ def reorder_sessions(payload: ReorderSessionsRequest):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f'Failed to reorder sessions: {str(e)}')
+
+
+@router.post('/upload')
+async def upload_file(file: UploadFile = File(...)):
+    """
+    Upload and extract content from files (PDF, Word, text files).
+    Returns extracted text content.
+    """
+    try:
+        # Read file content
+        file_content = await file.read()
+
+        # Check file size
+        max_size = settings.FILE_UPLOAD_MAX_SIZE_MB * 1024 * 1024
+        if len(file_content) > max_size:
+            raise HTTPException(
+                status_code=400,
+                detail=f'File too large. Max {settings.FILE_UPLOAD_MAX_SIZE_MB}MB.',
+            )
+
+        # Extract text content
+        try:
+            extracted_text = extract_text_from_file(file_content, file.filename)
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+
+        # Truncate if too long (50k chars ~ 12.5k tokens)
+        truncated_text = truncate_content(extracted_text, max_chars=50000)
+
+        return {
+            'content': truncated_text,
+            'filename': file.filename,
+            'original_size': len(file_content),
+            'extracted_length': len(truncated_text),
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'Failed to process file: {str(e)}')
+
+
+@router.post('/{session_id}/attachment')
+def attach_file(session_id: str, payload: AttachFileRequest):
+    """
+    Attach extracted file content to a session (used on next prompt only).
+    """
+    session = sessions_collection.find_one({'id': session_id}, {'_id': 0, 'id': 1})
+    if not session:
+        raise HTTPException(status_code=404, detail='Session not found')
+
+    filename = payload.filename.strip()
+    content = payload.content.strip() if payload.content else ''
+
+    if not filename or not content:
+        raise HTTPException(status_code=400, detail='filename and content are required')
+
+    truncated = truncate_content(content)
+
+    sessions_collection.update_one(
+        {'id': session_id},
+        {
+            '$set': {
+                'pending_attachment': {
+                    'filename': filename,
+                    'content': truncated,
+                    'length': len(truncated),
+                    'type': detect_file_type(filename),
+                    'created_at': datetime.utcnow(),
+                }
+            }
+        },
+    )
+
+    return {
+        'status': 'attached',
+        'filename': filename,
+        'length': len(truncated),
+    }

@@ -1,3 +1,6 @@
+import logging
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -7,6 +10,18 @@ from app.api.rules import router as rule_router
 from app.api.web import router as web_router
 from app.config.settings import settings
 from app.core.db import client
+
+LOG_LEVEL = os.getenv('LOG_LEVEL', 'DEBUG').upper()
+logging.basicConfig(
+    level=LOG_LEVEL,
+    format='%(asctime)s %(levelname)s %(name)s: %(message)s',
+    force=True,
+)
+
+# Reduce noisy third-party debug logs
+logging.getLogger('pymongo').setLevel(logging.WARNING)
+logging.getLogger('httpcore').setLevel(logging.WARNING)
+logging.getLogger('httpx').setLevel(logging.WARNING)
 
 app = FastAPI(title='My Slave', version='1.0.0')
 

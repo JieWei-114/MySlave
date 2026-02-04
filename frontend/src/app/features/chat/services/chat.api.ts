@@ -48,6 +48,7 @@ export class ChatApi {
     content: string,
     model: string,
     onToken: (t: string) => void,
+    onReasoning: (r: string) => void,
     onDone: () => void,
   ): () => void {
     const url =
@@ -57,17 +58,29 @@ export class ChatApi {
 
     const es = new EventSource(url);
 
-    es.onmessage = (e) => {
-      const token = decodeURIComponent(e.data);
-      onToken(token);
-    };
+    // es.onmessage = (e) => {
+    //   const token = decodeURIComponent(e.data);
+    //   onToken(token);
+    // };
 
-    es.addEventListener('done', () => {
+    es.addEventListener('token', (e: MessageEvent) => {
+      const token = JSON.parse(e.data);
+      onToken(token);
+    });
+
+    es.addEventListener('done', (e: MessageEvent) => {
+      const payload = JSON.parse(e.data);
+
+      if (payload.reasoning) {
+        onReasoning(payload.reasoning);
+      }
+
       es.close();
       onDone();
     });
 
-    es.onerror = () => {
+    es.onerror = (err) => {
+      console.error('SSE error', err);
       es.close();
       onDone();
     };
@@ -81,5 +94,12 @@ export class ChatApi {
       url += `&before=${encodeURIComponent(before)}`;
     }
     return this.http.get<any[]>(url);
+  }
+
+  attachFile(sessionId: string, payload: { filename: string; content: string }) {
+    return this.http.post<{ status: string; filename: string; length: number }>(
+      `${this.config.apiBaseUrl}/chat/${sessionId}/attachment`,
+      payload,
+    );
   }
 }

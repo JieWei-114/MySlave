@@ -26,6 +26,7 @@ import { SkeletonComponent } from '../../../shared/ui/skeleton/skeleton.componen
 import { ErrorBoundaryComponent } from '../../../shared/ui/error-boundary/error-boundary.component';
 import { AppConfigService } from '../../../core/services/app-config.services';
 import { AutoResizeTextareaDirective } from '../../../shared/directives/auto-resize-textarea.directive';
+
 // import { PrefixPipe } from '../../../shared/pipes/prefix.pipe';
 
 @Component({
@@ -127,15 +128,13 @@ export class ChatPage implements OnInit, AfterViewInit {
     this.isErrorDismissed.set(false);
     let content = this.store.draftMessage().trim();
 
-    // Append file content only when sending
-    if (this.fileContent()) {
-      const header = `\n\n[Attached file: ${this.selectedFileName()}]\n`;
-      content = content + header + this.fileContent();
-    }
-
     if (!content) return;
 
-    this.store.sendMessage(content);
+    const attachment = this.fileContent()
+      ? { filename: this.selectedFileName(), content: this.fileContent() }
+      : undefined;
+
+    this.store.sendMessage(content, attachment);
     this.store.clearDraft();
     this.selectedFileName.set('');
     this.fileContent.set('');
@@ -173,34 +172,71 @@ export class ChatPage implements OnInit, AfterViewInit {
     const file = input.files?.[0];
     if (!file) return;
 
-    const maxBytes = 500_000; // 500 KB
+    const maxBytes = this.config.fileUploadMaxBytes;
     if (file.size > maxBytes) {
-      this.fileError.set('File too large. Max 500KB.');
+      this.fileError.set('File too large. Max 10MB.');
       input.value = '';
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      const raw = String(reader.result ?? '');
-      const content = raw.trim();
-      if (!content) {
-        this.fileError.set('File is empty or unreadable.');
+    // Check if it's a binary file (PDF, Word)
+    const isBinary = this.config.binaryExtensions.some(ext =>
+      file.name.toLowerCase().endsWith(ext)
+    );
+
+    if (isBinary) {
+      // Upload binary file to backend for extraction
+      this.uploadFileToBackend(file);
+      input.value = '';
+    } else {
+      // Read text files directly in browser
+      const reader = new FileReader();
+      reader.onload = () => {
+        const raw = String(reader.result ?? '');
+        const content = raw.trim();
+        if (!content) {
+          this.fileError.set('File is empty or unreadable.');
+          input.value = '';
+          return;
+        }
+
+        this.selectedFileName.set(file.name);
+        this.fileContent.set(content);
         input.value = '';
-        return;
-      }
+      };
 
-      this.selectedFileName.set(file.name);
-      this.fileContent.set(content);
-      input.value = '';
-    };
+      reader.onerror = () => {
+        this.fileError.set('Failed to read file.');
+        input.value = '';
+      };
 
-    reader.onerror = () => {
-      this.fileError.set('Failed to read file.');
-      input.value = '';
-    };
+      reader.readAsText(file);
+    }
+  }
 
-    reader.readAsText(file);
+  private uploadFileToBackend(file: File): void {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    this.fileError.set('Extracting content...');
+
+    this.http
+      .post<{
+        content: string;
+        filename: string;
+      }>(`${this.config.apiBaseUrl}/chat/upload`, formData)
+      .subscribe({
+        next: (response: { content: string; filename: string }) => {
+          this.selectedFileName.set(response.filename);
+          this.fileContent.set(response.content);
+          this.fileError.set('');
+        },
+        error: (err: any) => {
+          this.fileError.set(err.error?.detail || 'Failed to extract file content.');
+          this.selectedFileName.set('');
+          this.fileContent.set('');
+        },
+      });
   }
 
   retryLoadSessions(): void {
@@ -231,5 +267,42 @@ export class ChatPage implements OnInit, AfterViewInit {
     this.selectedFileName.set('');
     this.fileContent.set('');
     this.fileError.set('');
+  }
+
+  isLastUserMessage(msg: any, index: number): boolean {
+    const messages = this.store.messageList();
+    if (msg.role !== 'user') return false;
+
+    // Find the last user message index
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role === 'user') {
+        return i === index;
+      }
+    }
+    return false;
+  }
+
+  onEditAndResend(editedContent: string, attachment?: { filename: string; content: string }): void {
+    if (!editedContent.trim() || this.store.loading()) return;
+
+    // Remove the last user message and any assistant responses after it
+    const messages = this.store.messageList();
+    let lastUserIndex = -1;
+
+    // Find last user message
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role === 'user') {
+        lastUserIndex = i;
+        break;
+      }
+    }
+
+    if (lastUserIndex !== -1) {
+      // Remove messages from last user message onwards
+      this.store.removeMessagesFrom(lastUserIndex);
+    }
+
+    // Send the edited message with attachment if present
+    this.store.sendMessage(editedContent, attachment);
   }
 }

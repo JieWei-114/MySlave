@@ -44,8 +44,44 @@ export class RulesPanelComponent implements OnInit {
   }
 
   toggleSessionRule(
-    key: 'searxng' | 'duckduckgo' | 'tavily' | 'serper' | 'tavilyExtract' | 'localExtract',
+    key:
+      | 'searxng'
+      | 'duckduckgo'
+      | 'tavily'
+      | 'serper'
+      | 'tavilyExtract'
+      | 'localExtract'
+      | 'advanceSearch'
+      | 'advanceExtract',
   ): void {
     this.rulesStore.toggleSessionRule(key);
+  }
+
+  updateLimit(key: string, event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const value = input.value;
+
+    if (!value) {
+      // Clear the limit if empty
+      this.rulesStore.updateLimit(key as any, undefined);
+    } else {
+      const numValue = parseInt(value, 10);
+      if (!isNaN(numValue)) {
+        this.rulesStore.updateLimit(key as any, numValue);
+      }
+    }
+  }
+
+  updateCustomInstructions(event: Event): void {
+    const textarea = event.target as HTMLTextAreaElement;
+    const value = textarea.value.trim();
+
+    if (!value) {
+      this.rulesStore.updateCustomInstructions('');
+    } else {
+      // Max 5000 characters
+      const truncated = value.substring(0, 5000);
+      this.rulesStore.updateCustomInstructions(truncated);
+    }
   }
 }

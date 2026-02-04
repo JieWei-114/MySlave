@@ -1,9 +1,15 @@
 from typing import Iterable, Sequence
 
 import numpy as np
+import torch
 from sentence_transformers import SentenceTransformer
 
-_model = SentenceTransformer('all-MiniLM-L6-v2', device='cpu')  # set to "cuda" if available
+DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
+
+_model = SentenceTransformer(
+    'all-MiniLM-L6-v2',
+    device=DEVICE,
+)
 
 
 def embed(texts: Iterable[str], normalize: bool = True) -> list[list[float]]:
@@ -23,18 +29,3 @@ def cosine_similarity(a: Sequence[float], b: Sequence[float]) -> float:
     if denom == 0:
         return 0.0
     return float(np.dot(va, vb) / denom)
-
-
-# from sentence_transformers import SentenceTransformer
-# import numpy as np
-
-# _model = SentenceTransformer("all-MiniLM-L6-v2")
-
-# def embed(text: str) -> list[float]:
-#     vec = _model.encode(text)
-#     return vec.tolist()
-
-# def cosine_similarity(a: list[float], b: list[float]) -> float:
-#     a = np.array(a)
-#     b = np.array(b)
-#     return float(np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b)))

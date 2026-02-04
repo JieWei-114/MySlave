@@ -2,6 +2,7 @@ import logging
 import re
 from typing import Optional
 
+from app.config.settings import settings
 from app.config.web_providers.ddg import DuckDuckGoProvider
 from app.config.web_providers.local_extract import extract_url_local
 from app.config.web_providers.searxng import SearXNGProvider
@@ -12,92 +13,79 @@ from app.core.db import rules_collection, sessions_collection
 
 logger = logging.getLogger(__name__)
 
+# Providers
 serper = SerperProvider()
 searxng = SearXNGProvider()
 ddg = DuckDuckGoProvider()
 tavily = TavilyProvider()
 
+# Centralized limit settings
+RESULTS_PER_PROVIDER = settings.WEB_SEARCH_RESULTS_PER_PROVIDER
+ADVANCE_SEARCH_TOTAL = settings.WEB_SEARCH_ADVANCE_TOTAL
 
-def get_enabled_rules(session_id: Optional[str] = None) -> dict:
-    try:
-        if session_id:
-            session = sessions_collection.find_one({'id': session_id}, {'_id': 0, 'rules': 1})
-            if session and session.get('rules'):
-                return session['rules']
-
-        rules = rules_collection.find_one({}, {'_id': 0})
-        if not rules:
-            #  Returns default (all enabled) if no rules are stored.
-            return {
-                'searxng': True,
-                'duckduckgo': True,
-                'tavily': True,
-                'serper': True,
-                'tavilyExtract': True,
-                'localExtract': True,
-            }
-        return rules
-    except Exception as e:
-        logger.warning(f'Failed to fetch rules, using defaults: {e}')
-        return {
-            'searxng': True,
-            'duckduckgo': True,
-            'tavily': True,
-            'serper': True,
-            'tavilyExtract': True,
-            'localExtract': True,
-        }
-
-
-# Command keywords
-EXPLICIT_COMMANDS = {
-    'super search': serper,
-    'tavily search': tavily,
-}
-
-AUTO_ROUTE_KEYWORDS = {
-    'serper': ['today', 'latest', 'current', 'news'],
-    'tavily': ['research', 'deep dive', 'detailed'],
-}
+# Auto-routing keywords for Tavily (research-focused queries)
+TAVILY_KEYWORDS = ['research', 'deep dive', 'detailed', 'analyze', 'comprehensive', 'thorough']
 
 URL_PATTERN = re.compile(
     r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+',
     re.IGNORECASE,
 )
 
+# ============================================================
+# Rules
+# ============================================================
 
-def is_url(text: str) -> bool:
-    # Validate URL format
-    match = URL_PATTERN.search(text.strip())
-    return match is not None
+DEFAULT_RULES = {
+    'searxng': True,
+    'duckduckgo': True,
+    'tavily': False,
+    'serper': False,
+    'tavilyExtract': False,
+    'localExtract': True,
+    'advanceSearch': False,
+    'advanceExtract': False,
+}
 
 
-def extract_url_from_text(text: str) -> Optional[str]:
-    # Extract first URL found in text
-    match = URL_PATTERN.search(text.strip())
-    return match.group(0) if match else None
+def get_enabled_rules(session_id: Optional[str] = None) -> dict:
+    try:
+        if session_id:
+            session = sessions_collection.find_one(
+                {'id': session_id},
+                {'_id': 0, 'rules': 1},
+            )
+            if session and session.get('rules'):
+                return {**DEFAULT_RULES, **session['rules']}
+
+        rules = rules_collection.find_one({}, {'_id': 0})
+        if rules:
+            return {**DEFAULT_RULES, **rules}
+
+        return DEFAULT_RULES.copy()
+
+    except Exception as e:
+        logger.warning(f'Failed to fetch rules, using defaults: {e}')
+        return DEFAULT_RULES.copy()
+
+
+# ============================================================
+# Web Search
+# ============================================================
 
 
 async def maybe_web_search(
-    query: str, limit: int = 5, session_id: Optional[str] = None
+    query: str,
+    limit: Optional[int] = None,
+    session_id: Optional[str] = None,
 ) -> list[dict]:
-    """
-    web search routing with rule-based filtering.
-
-    Priority:
-    1. Check enabled rules - skip disabled providers
-    2. Explicit commands ("super search", "tavily search")
-    3. "advance search" → all enabled providers
-    4. Auto-routing based on keywords
-    5. Default: SearXNG → DuckDuckGo fallback (if enabled)
-    """
-
     if not query or not query.strip():
         logger.warning('Empty search query')
         return []
 
-    # Get current rule configuration
-    rules = get_enabled_rules(session_id=session_id)
+    if limit is None:
+        limit = RESULTS_PER_PROVIDER
+
+    rules = get_enabled_rules(session_id)
     logger.info(f'Current rules: {rules}')
     logger.info(
         f'Current quotas - Serper: {remaining_serper_quota()}, Tavily: {remaining_tavily_quota()}'
@@ -106,200 +94,167 @@ async def maybe_web_search(
     query = query.strip()
     q_lower = query.lower()
 
-    # Explicit commands
-    for cmd, provider in EXPLICIT_COMMANDS.items():
-        if cmd in q_lower:
-            # Check if provider is enabled
-            provider_key = provider.name.lower()
-            if provider_key in rules and not rules[provider_key]:
-                logger.warning(f'{provider.name} is disabled by rules, skipping')
-                return []
+    # ---------------------------------------------------------------
+    # Advance Search
+    # ---------------------------------------------------------------
+    if rules['advanceSearch']:
+        logger.info('Advance search mode enabled')
 
-            logger.info(f"Explicit command '{cmd}' matched, using {provider.name}")
+        providers = []
+        if rules['tavily']:
+            providers.append(tavily)
+        if rules['serper']:
+            providers.append(serper)
+        if rules['searxng']:
+            providers.append(searxng)
+        if rules['duckduckgo']:
+            providers.append(ddg)
+
+        if not providers:
+            logger.warning('Advance search: all providers disabled')
+            return []
+
+        per_provider = max(1, ADVANCE_SEARCH_TOTAL // len(providers))
+        results: list[dict] = []
+        seen_urls: set[str] = set()
+
+        for provider in providers:
             try:
-                return await provider.search(query, limit)
-            except Exception as e:
-                logger.error(f'{provider.name} search failed: {e}')
-                return []
-
-    # Advance search: all enabled providers
-    if 'advance search' in q_lower:
-        logger.info('Advance search triggered, querying enabled providers')
-        results = []
-        seen_urls = set()
-
-        # Only query enabled providers
-        enabled_providers = []
-        if rules.get('tavily', True):
-            enabled_providers.append(tavily)
-        if rules.get('serper', True):
-            enabled_providers.append(serper)
-        if rules.get('searxng', True):
-            enabled_providers.append(searxng)
-        if rules.get('duckduckgo', True):
-            enabled_providers.append(ddg)
-
-        for provider in enabled_providers:
-            try:
-                provider_results = await provider.search(query, limit)
+                provider_results = await provider.search(query, per_provider)
                 for r in provider_results:
-                    url = r.get('link', '')
-                    if url not in seen_urls:
-                        results.append(r)
-                        seen_urls.add(url)
+                    url = r.get('link')
+                    if not url or url in seen_urls:
+                        continue
+
+                    results.append(r)
+                    seen_urls.add(url)
+
+                    if len(results) >= ADVANCE_SEARCH_TOTAL:
+                        break
             except Exception as e:
                 logger.warning(f'{provider.name} failed in advance search: {e}')
-                continue
 
-        return results[: limit * 2]
-
-    # Auto routing
-    for provider_name, keywords in AUTO_ROUTE_KEYWORDS.items():
-        if any(kw in q_lower for kw in keywords):
-            # Check if the auto-routed provider is enabled
-            if not rules.get(provider_name, True):
-                logger.info(f'Auto-routing to {provider_name} skipped (disabled by rules)')
+            if len(results) >= ADVANCE_SEARCH_TOTAL:
                 break
 
-            provider = serper if provider_name == 'serper' else tavily
-            logger.info(f'Auto-routing to {provider.name} (keyword match)')
-            try:
-                return await provider.search(query, limit)
-            except Exception as e:
-                logger.warning(f'{provider.name} auto-route failed: {e}')
-                break
+        logger.info(f'Advance search returning {len(results)} results')
+        return results[:ADVANCE_SEARCH_TOTAL]
 
-    # Default (if enabled)
-    logger.info('Using default routing: SearXNG → DuckDuckGo')
+    # ---------------------------------------------------------------
+    # Auto-route to Tavily (research queries)
+    # ---------------------------------------------------------------
+    if rules['tavily'] and any(kw in q_lower for kw in TAVILY_KEYWORDS):
+        logger.info('Auto-routing to Tavily (research query)')
+        try:
+            return await tavily.search(query, limit)
+        except Exception as e:
+            logger.warning(f'Tavily auto-route failed: {e}')
 
-    # Try SearXNG if enabled
-    if rules.get('searxng', True):
+    # ---------------------------------------------------------------
+    # Default provider chain
+    # ---------------------------------------------------------------
+    logger.info('Using default search routing')
+
+    if rules['searxng']:
         try:
             results = await searxng.search(query, limit)
             if results:
-                logger.info(f'SearXNG returned {len(results)} results')
                 return results
         except Exception as e:
             logger.warning(f'SearXNG failed: {e}')
-    else:
-        logger.info('SearXNG disabled by rules')
 
-    # Fallback to DuckDuckGo if enabled
-    if rules.get('duckduckgo', True):
+    if rules['duckduckgo']:
         try:
-            results = await ddg.search(query, limit)
-            logger.info(f'DuckDuckGo fallback returned {len(results)} results')
-            return results
+            return await ddg.search(query, limit)
         except Exception as e:
-            logger.error(f'DuckDuckGo failed: {e}')
-    else:
-        logger.info('DuckDuckGo disabled by rules')
+            logger.warning(f'DuckDuckGo failed: {e}')
 
-    # Fallback to tavily if enabled
-    if rules.get('tavily', True):
+    if rules['tavily']:
         try:
-            results = await tavily.search(query, limit)
-            logger.info(f'tavily fallback returned {len(results)} results')
-            return results
+            return await tavily.search(query, limit)
         except Exception as e:
-            logger.error(f'tavily failed: {e}')
-    else:
-        logger.info('tavily disabled by rules')
+            logger.warning(f'Tavily failed: {e}')
 
-    # Fallback to serper if enabled
-    if rules.get('serper', True):
+    if rules['serper']:
         try:
-            results = await serper.search(query, limit)
-            logger.info(f'serper fallback returned {len(results)} results')
-            return results
+            return await serper.search(query, limit)
         except Exception as e:
-            logger.error(f'serper failed: {e}')
-    else:
-        logger.info('serper disabled by rules')
+            logger.warning(f'Serper failed: {e}')
 
     logger.error('All search providers failed or disabled')
     return []
 
 
-async def maybe_extract(user_text: str, session_id: Optional[str] = None) -> str:
-    """
-    URL extraction routing with rule-based filtering.
+# ============================================================
+# URL Extraction
+# ============================================================
 
-    Priority:
-    1. Check enabled rules - skip disabled extraction methods
-    2. Explicit commands ("tavily extract", "local extract")
-    3. Default: Tavily → Local fallback (if enabled)
-    4. Returns empty string on all failures
-    """
 
+def extract_url_from_text(text: str) -> Optional[str]:
+    # Extract first URL found in text
+    match = URL_PATTERN.search(text.strip())
+    return match.group(0) if match else None
+
+
+async def maybe_extract(
+    user_text: str,
+    session_id: Optional[str] = None,
+) -> str:
     if not user_text or not user_text.strip():
         return ''
 
-    # Get current rule configuration
-    rules = get_enabled_rules(session_id=session_id)
-    logger.info(f'Current rules: {rules}')
-    logger.info(f'Current quotas - Tavily: {remaining_tavily_quota()}')
+    rules = get_enabled_rules(session_id)
 
-    # Clean the text: replace newlines with spaces and remove extra padding
     cleaned_text = ' '.join(user_text.strip().split())
-    text_lower = cleaned_text.lower()
-
-    # Detect URL in text
     url = extract_url_from_text(cleaned_text)
+
     if not url:
-        logger.debug('No URL detected in extraction request')
+        logger.debug('No URL detected')
         return ''
 
-    # Explicit commands
-    if 'tavily extract' in text_lower:
-        if not rules.get('tavilyExtract', True):
-            logger.warning('Tavily extract disabled by rules')
-            return ''
+    # ---------------------------------------------------------------
+    # Advance Extract
+    # ---------------------------------------------------------------
+    if rules['advanceExtract']:
+        logger.info(f'Advance extract for {url}')
+        results: list[str] = []
 
-        logger.info(f'Tavily extract requested for {url}')
+        if rules['localExtract']:
+            try:
+                content = await extract_url_local(url)
+                if content:
+                    results.append(f'[Local]\n{content}')
+            except Exception as e:
+                logger.warning(f'Local extract failed: {e}')
+
+        if rules['tavilyExtract']:
+            try:
+                content = await extract_url(url)
+                if content:
+                    results.append(f'[Tavily]\n{content}')
+            except Exception as e:
+                logger.warning(f'Tavily extract failed: {e}')
+
+        return '\n---\n'.join(results) if results else ''
+
+    # ---------------------------------------------------------------
+    # Default: Local → Tavily
+    # ---------------------------------------------------------------
+    logger.info(f'Default extract for {url}')
+
+    if rules['localExtract']:
+        try:
+            content = await extract_url_local(url)
+            if content:
+                return content
+        except Exception as e:
+            logger.warning(f'Local extract failed: {e}')
+
+    if rules['tavilyExtract']:
         try:
             return await extract_url(url)
         except Exception as e:
-            logger.error(f'Tavily extract failed: {e}')
-            return ''
-
-    if 'local extract' in text_lower:
-        if not rules.get('localExtract', True):
-            logger.warning('Local extract disabled by rules')
-            return ''
-
-        logger.info(f'Local extract requested for {url}')
-        try:
-            return await extract_url_local(url)
-        except Exception as e:
-            logger.error(f'Local extract failed: {e}')
-            return ''
-
-    # Default: Tavily → Local fallback (if enabled)
-    logger.info(f'Default extraction for {url}: Tavily → Local')
-
-    # Try Tavily if enabled
-    if rules.get('tavilyExtract', True):
-        try:
-            result = await extract_url(url)
-            if result:
-                logger.info('Tavily extract succeeded')
-                return result
-        except Exception as e:
-            logger.warning(f'Tavily extract failed, falling back to local: {e}')
-    else:
-        logger.info('Tavily extract disabled by rules, trying local')
-
-    # Fallback to Local if enabled
-    if rules.get('localExtract', True):
-        try:
-            result = await extract_url_local(url)
-            logger.info('Local extract fallback succeeded')
-            return result
-        except Exception as e:
-            logger.error(f'Local extract failed: {e}')
-    else:
-        logger.info('Local extract disabled by rules')
+            logger.warning(f'Tavily extract failed: {e}')
 
     logger.error('All extraction methods failed or disabled')
     return ''

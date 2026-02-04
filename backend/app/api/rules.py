@@ -2,6 +2,7 @@ import logging
 
 from fastapi import APIRouter
 
+from app.config.settings import settings
 from app.core.db import rules_collection, sessions_collection
 from app.models.dto import RulesConfig
 
@@ -49,7 +50,7 @@ async def get_session_rules(session_id: str):
             return RulesConfig()
 
         rules = session.get('rules', {})
-        logger.debug(f'Retrieved rules for session {session_id}: {rules}')
+        logger.debug(f'Session id {session_id}')
         return RulesConfig(**rules) if rules else RulesConfig()
 
     except Exception as e:
@@ -60,7 +61,6 @@ async def get_session_rules(session_id: str):
 @router.put('/{session_id}', response_model=RulesConfig)
 async def update_session_rules(session_id: str, rules: RulesConfig):
     try:
-        # Convert RulesConfig to dict for MongoDB storage
         rules_dict = rules.model_dump()
         logger.info(f'Updating session rules for {session_id} with: {rules_dict}')
 
@@ -93,3 +93,13 @@ async def update_session_rules(session_id: str, rules: RulesConfig):
     except Exception as e:
         logger.error(f'Error updating session rules: {e}')
         raise
+
+@router.get("/client-config")
+def get_client_config():
+    return {
+        "fileUpload": {
+            "maxSizeMB": settings.FILE_UPLOAD_MAX_SIZE_MB,
+            "allowedBinaryExtensions": [".pdf", ".doc", ".docx"],
+            "maxExtractChars": settings.FILE_UPLOAD_MAX_CHARS,
+        }
+    }

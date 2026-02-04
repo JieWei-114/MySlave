@@ -37,7 +37,12 @@
 
     <!-- Messages -->
     <div class="messages-container" *ngIf="store.hasMessages()">
-      <app-chat-message-bubble *ngFor="let msg of store.messageList()" [message]="msg" />
+      <app-chat-message-bubble
+        *ngFor="let msg of store.messageList(); let i = index"
+        [message]="msg"
+        [isLastUserMessage]="isLastUserMessage(msg, i)"
+        (editAndResend)="onEditAndResend($event.content, $event.attachment)"
+      />
 
       <div class="typing-indicator" *ngIf="isTyping">
         <span class="dot"></span>
@@ -57,7 +62,7 @@
           #fileInput
           class="file-input"
           type="file"
-          accept=".txt,.md,.json,.csv,.log,.html,.css,.ts,.js,.py,.yaml,.yml,text/*"
+          accept=".txt,.md,.json,.csv,.log,.html,.css,.ts,.js,.py,.yaml,.yml,.pdf,.doc,.docx,text/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
           (change)="onFileSelected($event)"
           [disabled]="store.loading()"
         />

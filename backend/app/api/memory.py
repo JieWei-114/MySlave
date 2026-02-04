@@ -47,7 +47,7 @@ def remove_memory(memory_id: str):
 def search(
     chat_sessionId: str,
     q: str,
-    limit: int = 5,
+    limit: int = None,
 ):
     return search_memories(chat_sessionId, q, limit)
 
