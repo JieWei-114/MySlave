@@ -1,4 +1,4 @@
-# MySlave – Local AI Assistant Platform
+# MySlave – Local AI Assistant Platform (in progress)
 
 A fully local, privacy-first AI assistant with advanced conversation management, persistent memory, custom rules, and intelligent web search. Built with **Angular 21 + FastAPI + MongoDB**, combining modern frontend architecture with a powerful, production-ready backend.
 
