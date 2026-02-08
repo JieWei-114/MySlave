@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -22,16 +22,18 @@ export class ChatMessageBubbleComponent {
     attachment?: { filename: string; content: string };
   }>();
 
-  /** UI State */
+  /** 
+   * UI State 
+   */
   isEditing = false;
   editedContent = '';
-  showReasoning = false;
+  showReasoning = true;
 
   constructor(private store: ChatStore) {}
 
-  /** =====================
-   *  UI Actions
-   *  ===================== */
+  /**
+   * UI Actions
+   */
   toggleReasoning(): void {
     this.showReasoning = !this.showReasoning;
   }
@@ -72,9 +74,9 @@ export class ChatMessageBubbleComponent {
     }
   }
 
-  /** =====================
+  /**
    *  Template Helpers
-   *  ===================== */
+   */
   get isUser(): boolean {
     return this.message?.role === 'user';
   }

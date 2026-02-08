@@ -1,0 +1,395 @@
+<div class="context-indicator" *ngIf="visible() && metadata() as meta">
+  <div class="indicator-header">
+    <h4>Response Analysis</h4>
+    <button class="close-btn" (click)="onClose()">×</button>
+  </div>
+
+  <div class="metadata-section">
+    <!-- SOURCE STATUS SECTION -->
+    <div class="collapsible-section" *ngIf="meta.loaded_sources">
+      <button class="section-toggle" (click)="toggleSection('sources')">
+        <span class="toggle-icon" [class.expanded]="isSectionExpanded('sources')">▶</span>
+        <span class="section-title">Source Status</span>
+        <span class="section-subtitle">
+          {{ meta.has_factual_content ? 'Factual sources used' : 'Contextual only' }}
+        </span>
+      </button>
+
+      <div class="section-content" *ngIf="isSectionExpanded('sources')">
+        <div class="source-grid">
+          <!-- FILE STATUS -->
+          <div class="source-item" *ngIf="meta.loaded_sources.file as fileStatus">
+            <span class="source-icon">📄</span>
+            <div class="source-info">
+              <div class="source-name">File</div>
+              <div
+                class="source-status"
+                [class.available]="fileStatus.available"
+                [class.unavailable]="!fileStatus.available"
+              >
+                {{ fileStatus.available ? 'AVAILABLE' : 'UNAVAILABLE' }}
+                <span *ngIf="fileStatus.count"> ({{ fileStatus.count }} items)</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- MEMORY STATUS -->
+          <div class="source-item" *ngIf="meta.loaded_sources.memory as memStatus">
+            <span class="source-icon">🧠</span>
+            <div class="source-info">
+              <div class="source-name">Memory</div>
+              <div
+                class="source-status"
+                [class.available]="memStatus.available"
+                [class.unavailable]="!memStatus.available"
+              >
+                {{ memStatus.available ? 'AVAILABLE' : 'UNAVAILABLE' }}
+                <span *ngIf="memStatus.count"> ({{ memStatus.count }} items)</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- WEB STATUS -->
+          <div class="source-item" *ngIf="meta.loaded_sources.web as webStatus">
+            <span class="source-icon">🌐</span>
+            <div class="source-info">
+              <div class="source-name">Web Search</div>
+              <div
+                class="source-status"
+                [class.available]="webStatus.available"
+                [class.unavailable]="!webStatus.available"
+              >
+                {{ webStatus.available ? 'USED' : 'NOT USED' }}
+                <span *ngIf="webStatus.count"> ({{ webStatus.count }} results)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- REASONING CHAIN SECTION -->
+    <div class="collapsible-section">
+      <button class="section-toggle" (click)="toggleSection('reasoning')">
+        <span class="toggle-icon" [class.expanded]="isSectionExpanded('reasoning')">▶</span>
+        <span class="section-title">Reasoning Chain</span>
+        <span class="section-subtitle" *ngIf="meta.reasoning_chain as chain">
+          {{ chain.steps_count }} steps • {{ chain.sources_used?.join(', ') || 'no sources' }}
+        </span>
+      </button>
+
+      <div
+        class="section-content"
+        *ngIf="isSectionExpanded('reasoning') && meta.reasoning_chain as chain"
+      >
+        <div class="chain-grid">
+          <div class="chain-item" *ngFor="let step of chain.step_details">
+            <span class="step-badge">{{ step.step }}</span>
+            <div class="step-details">
+              <div class="step-action">{{ step.action | uppercase }}</div>
+              <div class="step-source">📍 {{ step.source }}</div>
+              <div
+                class="step-confidence"
+                [style.color]="
+                  step.confidence >= 0.8
+                    ? '#28a745'
+                    : step.confidence >= 0.6
+                      ? '#ffc107'
+                      : '#dc3545'
+                "
+              >
+                {{ (step.confidence * 100).toFixed(0) }}% confident
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="chain-flags" *ngIf="chain.uncertainty_flags?.length">
+          <strong>Uncertainties Noted:</strong>
+          <ul>
+            <li *ngFor="let flag of chain.uncertainty_flags">{{ flag }}</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- REASONING VETO SECTION -->
+    <div class="collapsible-section" *ngIf="meta.reasoning_veto as veto">
+      <button
+        class="section-toggle"
+        (click)="toggleSection('veto')"
+        [class]="'veto-' + getVetoClass(veto.level)"
+      >
+        <span class="toggle-icon" [class.expanded]="isSectionExpanded('veto')">▶</span>
+        <span class="section-title">Reasoning Veto</span>
+        <span class="veto-badge" [class]="getVetoClass(veto.level)">{{
+          getVetoLevel(veto.level)
+        }}</span>
+      </button>
+
+      <div class="section-content" *ngIf="isSectionExpanded('veto')">
+        <div class="veto-info" [class]="'risk-' + getVetoClass(veto.level)">
+          <div class="veto-reason">{{ veto.reason }}</div>
+          <div class="veto-signals" *ngIf="veto.signals?.length">
+            <strong>Detected Signals:</strong>
+            <div class="signal-tags">
+              <span class="signal-tag" *ngFor="let signal of veto.signals">
+                {{ signal }}
+              </span>
+            </div>
+          </div>
+          <div
+            class="veto-cap"
+            *ngIf="veto.confidence_cap !== undefined && veto.confidence_cap < 1.0"
+          >
+            Confidence capped to:
+            <strong>{{ formatConfidenceValue(veto.confidence_cap!) }}</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FACTUAL GUARD SECTION -->
+    <div class="collapsible-section" *ngIf="meta.factual_guard as guard">
+      <button
+        class="section-toggle"
+        (click)="toggleSection('guard')"
+        [class]="'guard-' + getRiskClass(guard.risk)"
+      >
+        <span class="toggle-icon" [class.expanded]="isSectionExpanded('guard')">▶</span>
+        <span class="section-title">Factual Guard</span>
+        <span class="risk-badge" [class]="getRiskClass(guard.risk)">{{
+          getRiskLevel(guard.risk)
+        }}</span>
+      </button>
+
+      <div class="section-content" *ngIf="isSectionExpanded('guard')">
+        <div class="guard-info" [class]="'risk-' + getRiskClass(guard.risk)">
+          <div class="guard-risk" [class]="'level-' + getRiskClass(guard.risk)">
+            Risk Level: <strong>{{ getRiskLevel(guard.risk) }}</strong>
+          </div>
+
+          <div class="unverified-entities" *ngIf="guard.unverified_entities?.length">
+            <strong>Unverified Entities:</strong>
+            <ul class="entity-list">
+              <li *ngFor="let entity of guard.unverified_entities">
+                <span class="entity-name">{{ entity }}</span>
+                <span class="entity-status">not found in sources</span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="guard-cap" *ngIf="guard.cap !== undefined && guard.cap < 1.0">
+            Confidence capped to: <strong>{{ formatConfidenceValue(guard.cap) }}</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- UNCERTAINTY FLAGS SECTION (NEW) -->
+    <div
+      class="collapsible-section"
+      *ngIf="meta.uncertainty_flags && meta.uncertainty_flags.length > 0"
+    >
+      <button class="section-toggle" (click)="toggleSection('uncertainties')">
+        <span class="toggle-icon" [class.expanded]="isSectionExpanded('uncertainties')">▶</span>
+        <span class="section-title">Uncertainty Flags</span>
+        <span class="flag-count">{{ meta.uncertainty_flags.length }}</span>
+      </button>
+
+      <div class="section-content" *ngIf="isSectionExpanded('uncertainties')">
+        <div class="uncertainty-list">
+          <div class="uncertainty-item" *ngFor="let flag of meta.uncertainty_flags; let i = index">
+            <div class="flag-header">
+              <span class="flag-number">#{{ i + 1 }}</span>
+              <span class="flag-title" *ngIf="flag.aspect">
+                {{ flag.aspect }}
+              </span>
+            </div>
+
+            <div class="flag-details">
+              <div class="flag-aspect" *ngIf="flag.aspect">
+                <strong>Aspect:</strong> {{ flag.aspect }}
+              </div>
+
+              <div class="flag-confidence" *ngIf="flag.confidence !== undefined">
+                <strong>Confidence:</strong>
+                <div class="confidence-bar-small">
+                  <div
+                    class="confidence-fill"
+                    [style.width.%]="flag.confidence * 100"
+                    [class]="
+                      flag.confidence >= 0.8 ? 'high' : flag.confidence >= 0.5 ? 'medium' : 'low'
+                    "
+                  ></div>
+                </div>
+                <span class="confidence-value">{{ (flag.confidence * 100).toFixed(0) }}%</span>
+              </div>
+
+              <div
+                class="flag-suggestion"
+                *ngIf="flag.suggested_actions && flag.suggested_actions.length"
+              >
+                <strong>Suggested Actions:</strong>
+                <ul>
+                  <li *ngFor="let action of flag.suggested_actions">
+                    {{ formatAction(action) }}
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONFIDENCE BREAKDOWN SECTION -->
+    <div
+      class="collapsible-section"
+      *ngIf="meta.confidence_initial !== undefined || meta.confidence_final !== undefined"
+    >
+      <button class="section-toggle" (click)="toggleSection('confidence')">
+        <span class="toggle-icon" [class.expanded]="isSectionExpanded('confidence')">▶</span>
+        <span class="section-title">Confidence Breakdown</span>
+      </button>
+
+      <div class="section-content" *ngIf="isSectionExpanded('confidence')">
+        <div class="confidence-timeline">
+          <div class="confidence-step">
+            <div class="step-label">Initial (from sources)</div>
+            <div class="step-bar" [style.width.%]="(meta.confidence_initial ?? 0) * 100"></div>
+            <div class="step-value">{{ formatConfidenceValue(meta.confidence_initial) }}</div>
+          </div>
+
+          <div class="timeline-arrow">↓</div>
+
+          <div class="confidence-step" *ngIf="meta.reasoning_veto?.level !== 'none'">
+            <div class="step-label">After Reasoning Veto</div>
+            <div
+              class="step-bar veto"
+              [style.width.%]="(meta.confidence_final ?? meta.confidence_initial ?? 0) * 100"
+            ></div>
+            <div class="step-value">
+              {{ formatConfidenceValue(meta.confidence_final || meta.confidence_initial) }}
+            </div>
+            <div
+              class="step-reduction"
+              *ngIf="
+                meta.confidence_initial !== undefined &&
+                meta.confidence_final !== undefined &&
+                meta.confidence_final < meta.confidence_initial
+              "
+            >
+              -{{ formatConfidenceValue(meta.confidence_initial - meta.confidence_final) }}
+            </div>
+          </div>
+
+          <div
+            class="timeline-arrow"
+            *ngIf="meta.reasoning_veto?.level !== 'none' && meta.factual_guard?.cap"
+          >
+            ↓
+          </div>
+
+          <div
+            class="confidence-step"
+            *ngIf="meta.factual_guard as guard"
+            [hidden]="
+              guard.cap === undefined ||
+              guard.cap >= (meta.confidence_final ?? meta.confidence_initial ?? 1)
+            "
+          >
+            <div class="step-label">After Factual Guard</div>
+            <div class="step-bar guard" [style.width.%]="guard.cap * 100"></div>
+            <div class="step-value">{{ formatConfidenceValue(guard.cap) }}</div>
+            <div class="step-reduction" *ngIf="guard.cap !== undefined">
+              -{{
+                formatConfidenceValue(
+                  (meta.confidence_final ?? meta.confidence_initial ?? 1) - guard.cap
+                )
+              }}
+            </div>
+          </div>
+
+          <div class="timeline-arrow" *ngIf="meta.confidence_final">↓</div>
+
+          <div class="confidence-step final">
+            <div class="step-label">Final Confidence</div>
+            <div class="step-bar final" [style.width.%]="(meta.confidence_final ?? 0) * 100"></div>
+            <div class="step-value">{{ formatConfidenceValue(meta.confidence_final) }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SOURCE CONFLICTS SECTION -->
+    <div
+      class="collapsible-section"
+      *ngIf="meta.source_conflicts && meta.source_conflicts.length > 0"
+    >
+      <button class="section-toggle conflict" (click)="toggleSection('conflicts')">
+        <span class="toggle-icon" [class.expanded]="isSectionExpanded('conflicts')">▶</span>
+        <span class="section-title">⚡ Source Conflicts</span>
+        <span class="conflict-count">{{ meta.source_conflicts.length }}</span>
+      </button>
+
+      <div class="section-content" *ngIf="isSectionExpanded('conflicts')">
+        <div class="conflict-list">
+          <div class="conflict-item" *ngFor="let conflict of meta.source_conflicts">
+            <div class="conflict-sources">
+              <strong>Sources:</strong>
+              <span class="source-tag" *ngFor="let source of conflict.sources">
+                {{ formatSource(source) }}
+              </span>
+            </div>
+            <div class="conflict-reason">{{ conflict.reason }}</div>
+            <div class="conflict-reduction" *ngIf="conflict.confidence_reduction">
+              Confidence reduced by:
+              <strong>{{ formatConfidenceValue(conflict.confidence_reduction) }}</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ORIGINAL SECTIONS (KEPT) -->
+    <div class="meta-item">
+      <span class="meta-label">Primary Source:</span>
+      <span class="meta-value">{{ formatSource(meta.source_used) }}</span>
+    </div>
+
+    <div class="meta-item" *ngIf="meta.confidence_final !== undefined">
+      <span class="meta-label">Final Confidence:</span>
+      <div class="confidence-bar-container">
+        <div
+          class="confidence-bar"
+          [style.width.%]="meta.confidence_final * 100"
+          [class.low]="meta.confidence_final < 0.7"
+        ></div>
+        <span class="confidence-text">{{ (meta.confidence_final * 100).toFixed(0) }}%</span>
+      </div>
+    </div>
+
+    <div class="meta-item" *ngIf="meta.supplemented_with && meta.supplemented_with.length > 0">
+      <span class="meta-label">Supplemented With:</span>
+      <div class="source-tags">
+        <span class="tag" *ngFor="let source of meta.supplemented_with">
+          {{ formatSource(source) }}
+        </span>
+      </div>
+    </div>
+
+    <div class="meta-item" *ngIf="meta.sources_considered">
+      <span class="meta-label">Sources Evaluated:</span>
+      <div class="sources-list">
+        <div class="source-score" *ngFor="let item of getSourcesArray(meta.sources_considered)">
+          <span class="source-name">{{ formatSource(item.source) }}</span>
+          <div class="score-bar">
+            <div class="score-fill" [style.width.%]="item.score * 100"></div>
+          </div>
+          <span class="score-text">{{ (item.score * 100).toFixed(0) }}%</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

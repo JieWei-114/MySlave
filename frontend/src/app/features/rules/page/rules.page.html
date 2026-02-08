@@ -28,18 +28,37 @@
           <h3>Session Rules & Settings</h3>
           <p>Customize search providers, limits, and AI behavior for this chat session</p>
         </div>
+        <button class="reset-button" (click)="resetToDefaults()" title="Reset to default settings">
+          Reset to Defaults
+        </button>
       </div>
+
+      <!-- Active Providers Summary -->
+      @if (hasSearchEnabled() && enabledSearchProviders().length > 0) {
+        <div class="providers-summary">
+          <span class="summary-label">Active Search:</span>
+          <span class="summary-value">{{ enabledSearchProviders().join(', ') }}</span>
+        </div>
+      }
+      @if (!hasSearchEnabled()) {
+        <div class="providers-warning">
+          No search providers enabled. Web search will not work.
+        </div>
+      }
     }
 
     <!-- Web Search Providers Section -->
     <div class="rules-section">
       <h3>Web Search Providers</h3>
-      <p class="section-description">Enable or disable search providers for web queries</p>
+      <p class="section-description">
+        Enable or disable search providers for web queries. 
+        <span class="info-badge">Free providers enabled by default</span>
+      </p>
 
       <div class="rule-item">
         <div class="rule-info">
-          <span class="rule-name">SearXNG</span>
-          <span class="rule-desc">Privacy-focused meta-search engine (Local)</span>
+          <span class="rule-name">SearXNG <span class="badge badge-free">FREE</span></span>
+          <span class="rule-desc">Privacy-focused meta-search engine (Self-hosted)</span>
         </div>
         <label class="toggle-switch">
           <input
@@ -53,8 +72,8 @@
 
       <div class="rule-item">
         <div class="rule-info">
-          <span class="rule-name">DuckDuckGo</span>
-          <span class="rule-desc">Privacy-focused search engine (Free)</span>
+          <span class="rule-name">DuckDuckGo <span class="badge badge-free">FREE</span></span>
+          <span class="rule-desc">Privacy-focused search engine (No API key required)</span>
         </div>
         <label class="toggle-switch">
           <input
@@ -68,8 +87,8 @@
 
       <div class="rule-item">
         <div class="rule-info">
-          <span class="rule-name">Tavily</span>
-          <span class="rule-desc">AI-powered research search (API Key Required)</span>
+          <span class="rule-name">Tavily <span class="badge badge-paid">API KEY</span></span>
+          <span class="rule-desc">AI-powered research search (Requires API key in backend .env)</span>
         </div>
         <label class="toggle-switch">
           <input
@@ -83,8 +102,8 @@
 
       <div class="rule-item">
         <div class="rule-info">
-          <span class="rule-name">Serper</span>
-          <span class="rule-desc">Google Search API (API Key Required)</span>
+          <span class="rule-name">Serper <span class="badge badge-paid">API KEY</span></span>
+          <span class="rule-desc">Google Search API (Requires API key in backend .env)</span>
         </div>
         <label class="toggle-switch">
           <input
@@ -99,10 +118,9 @@
       <!-- Advance Search Toggle -->
       <div class="rule-item advance-mode">
         <div class="rule-info">
-          <span class="rule-name">Advance Search</span>
+          <span class="rule-name">Advance Search <span class="badge badge-advanced">ADVANCED</span></span>
           <span class="rule-desc"
-            >Enable all search providers + search from all simultaneously (queries all enabled
-            providers at once)</span
+            >Query all enabled providers simultaneously and combine results (enables all search providers)</span
           >
         </div>
         <label class="toggle-switch">
@@ -123,8 +141,8 @@
 
       <div class="rule-item">
         <div class="rule-info">
-          <span class="rule-name">Tavily Extract</span>
-          <span class="rule-desc">Cloud-based extraction (API Key Required)</span>
+          <span class="rule-name">Tavily Extract <span class="badge badge-paid">API KEY</span></span>
+          <span class="rule-desc">Cloud-based extraction (Requires API key in backend .env)</span>
         </div>
         <label class="toggle-switch">
           <input
@@ -138,8 +156,8 @@
 
       <div class="rule-item">
         <div class="rule-info">
-          <span class="rule-name">Local Extract</span>
-          <span class="rule-desc">Local content extraction (Free)</span>
+          <span class="rule-name">Local Extract <span class="badge badge-free">FREE</span></span>
+          <span class="rule-desc">Local content extraction using readability (No API key required)</span>
         </div>
         <label class="toggle-switch">
           <input
@@ -154,11 +172,8 @@
       <!-- Advance Extract Toggle -->
       <div class="rule-item advance-mode">
         <div class="rule-info">
-          <span class="rule-name">Advance Extract</span>
-          <span class="rule-desc"
-            >Enable all extraction methods + extract from both simultaneously (combines Local +
-            Tavily content)</span
-          >
+          <span class="rule-name">Advance Extract <span class="badge badge-advanced">ADVANCED</span></span>
+          <span class="rule-desc">Use both extraction methods and combine results (enables all extraction methods)</span>
         </div>
         <label class="toggle-switch">
           <input

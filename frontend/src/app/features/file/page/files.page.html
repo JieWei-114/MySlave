@@ -1,0 +1,36 @@
+<div class="files-panel">
+  <div class="files-header">
+    <div>
+      <h3>Files</h3>
+      <p>Attach files to this session</p>
+    </div>
+  </div>
+
+  <div class="files-actions">
+    <input
+      class="file-input"
+      type="file"
+      (change)="onFileSelected($event)"
+      [disabled]="fileStore.uploading()"
+    />
+    <span class="status" *ngIf="fileStore.uploading()">Uploading...</span>
+    <span class="error" *ngIf="fileError()">{{ fileError() }}</span>
+  </div>
+
+  <div class="files-list" *ngIf="fileStore.files().length; else empty">
+    <div class="file-item" *ngFor="let f of fileStore.files()">
+      <div class="file-info">
+        <div class="file-name">{{ f.filename }}</div>
+        <div class="file-meta">{{ f.file_type }} • {{ f.size_chars }} chars</div>
+      </div>
+      <app-button class="btn-delete" (click)="deleteFile(f.id)">🗑</app-button>
+    </div>
+  </div>
+
+  <ng-template #empty>
+    <div class="empty-state">
+      <h3>No files yet</h3>
+      <p>Attach a file to use it in context</p>
+    </div>
+  </ng-template>
+</div>

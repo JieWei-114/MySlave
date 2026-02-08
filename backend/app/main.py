@@ -1,3 +1,7 @@
+"""
+Main application entry point
+Sets up FastAPI app with CORS, routers, and health checks
+"""
 import logging
 import os
 
@@ -11,6 +15,7 @@ from app.api.web import router as web_router
 from app.config.settings import settings
 from app.core.db import client
 
+# Configure logging level from environment
 LOG_LEVEL = os.getenv('LOG_LEVEL', 'DEBUG').upper()
 logging.basicConfig(
     level=LOG_LEVEL,
@@ -23,11 +28,13 @@ logging.getLogger('pymongo').setLevel(logging.WARNING)
 logging.getLogger('httpcore').setLevel(logging.WARNING)
 logging.getLogger('httpx').setLevel(logging.WARNING)
 
+# Initialize FastAPI application
 app = FastAPI(title='My Slave', version='1.0.0')
 
+# Enable CORS for frontend communication
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
+    allow_origins=settings.CORS_ORIGINS or ['*'],
     allow_credentials=True,
     allow_methods=['*'],
     allow_headers=['*'],
@@ -36,13 +43,15 @@ app.add_middleware(
 
 @app.get('/')
 async def read_root():
+    """Root endpoint - welcome message"""
     return {'message': 'Welcome to my API!'}
 
 
 @app.get('/health')
 async def health_check():
-    """Health check endpoint with database status"""
+    """Health check endpoint with database connectivity status"""
     try:
+        # Ping MongoDB to check connection
         client.admin.command('ping')
         db_status = 'connected'
     except Exception:
@@ -55,7 +64,8 @@ async def health_check():
     }
 
 
-app.include_router(chat_router)
-app.include_router(memory_router)
-app.include_router(web_router)
-app.include_router(rule_router)
+# Register API routers
+app.include_router(chat_router)  # Chat sessions and streaming
+app.include_router(memory_router)  # Memory management
+app.include_router(web_router)  # Web search
+app.include_router(rule_router)  # Rules configuration

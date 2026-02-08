@@ -15,11 +15,5 @@ class WebSearchProvider(ABC):
         """
         Search for query and return list of results.
 
-        Args:
-            query: The search query string
-            limit: Maximum number of results to return
-
-        Returns:
-            List of dicts with keys: title, snippet, link, source
         """
         pass

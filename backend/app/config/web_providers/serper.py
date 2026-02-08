@@ -1,3 +1,4 @@
+import logging
 from typing import Any
 
 import httpx
@@ -6,11 +7,15 @@ from app.config.settings import settings
 from app.config.web_providers.base import WebSearchProvider
 from app.core.db import serper_quota_collection
 
+logger = logging.getLogger(__name__)
+
 quota = serper_quota_collection
 
 
 def remaining_serper_quota() -> int:
     doc = quota.find_one({'_id': 'serper'})
+    if settings.SERPER_TOTAL_LIMIT is None:
+        return 0
     if not doc:
         return settings.SERPER_TOTAL_LIMIT
     return max(0, settings.SERPER_TOTAL_LIMIT - doc['count'])
@@ -29,12 +34,18 @@ class SerperProvider(WebSearchProvider):
 
     async def search(self, query: str, limit: int = None) -> list[dict[str, Any]]:
         if not settings.SERPER_API_KEY:
+            logger.warning('Serper API key missing')
+            return []
+        
+        if not settings.SERPER_URL:
+            logger.warning('Serper URL missing')
             return []
 
         if limit is None:
             limit = settings.SERPER_LIMIT
 
         if remaining_serper_quota() <= 0:
+            logger.info('Serper quota exhausted')
             return []
 
         timeout = httpx.Timeout(settings.SERPER_TIMEOUT)
@@ -50,12 +61,14 @@ class SerperProvider(WebSearchProvider):
                     json={'q': query, 'num': limit},
                 )
                 res.raise_for_status()
-        except (httpx.HTTPError, httpx.TimeoutException):
+        except (httpx.HTTPError, httpx.TimeoutException) as e:
+            logger.warning('Serper request failed: %s', e)
             return []
 
         try:
             data = res.json()
-        except Exception:
+        except Exception as e:
+            logger.warning('Serper response parse failed: %s', e)
             return []
 
         results = data.get('organic', [])
@@ -74,3 +87,4 @@ class SerperProvider(WebSearchProvider):
             for r in results
             if r.get('link')
         ]
+    

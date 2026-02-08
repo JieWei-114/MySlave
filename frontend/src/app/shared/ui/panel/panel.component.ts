@@ -1,3 +1,7 @@
+/**
+ * Panel Component
+ * Right-side panel with tabs for Memory, Web Search, and Rules
+ */
 import {
   Component,
   Input,
@@ -11,15 +15,16 @@ import {
 import { isPlatformBrowser } from '@angular/common';
 import { CommonModule } from '@angular/common';
 import { MemoryPage } from '../../../features/memory/page/memory.page';
+import { FilesPage } from '../../../features/file/page/files.page';
 import { WebSearchComponent } from '../../../features/web/page/web-search.component';
 import { RulesPanelComponent } from '../../../features/rules/page/rules.page';
 
-type PanelTab = 'memory' | 'web' | 'rules';
+type PanelTab = 'memory' | 'files' | 'web' | 'rules';
 
 @Component({
   selector: 'app-panel',
   standalone: true,
-  imports: [CommonModule, MemoryPage, WebSearchComponent, RulesPanelComponent],
+  imports: [CommonModule, MemoryPage, FilesPage, WebSearchComponent, RulesPanelComponent],
   templateUrl: './panel.component.html',
   styleUrls: ['./panel.component.css'],
 })
@@ -43,7 +48,12 @@ export class PanelComponent implements AfterViewInit {
     }
   }
 
+  /**
+   * Setup mouse event handlers for panel resizing
+   * Allows user to drag the left edge to resize panel width
+   */
   private setupPanelResize(): void {
+    // Start resize on handle mousedown
     document.addEventListener('mousedown', (e: MouseEvent) => {
       const target = e.target as HTMLElement;
       if (!target.classList.contains('panel-resize-handle')) return;
@@ -60,6 +70,7 @@ export class PanelComponent implements AfterViewInit {
       document.body.style.userSelect = 'none';
     });
 
+    // Update width during drag
     document.addEventListener('mousemove', (e: MouseEvent) => {
       if (!this.isResizing) return;
 
@@ -67,15 +78,18 @@ export class PanelComponent implements AfterViewInit {
       const panel = this.elementRef.nativeElement;
       if (!panel) return;
 
-      const delta = this.startX - e.clientX; // drag left
+      // Drag left increases width (panel on right side)
+      const delta = this.startX - e.clientX;
       const newWidth = this.startWidth + delta;
 
+      // Enforce min/max width constraints
       if (newWidth >= 390 && newWidth <= 600) {
         panel.style.width = newWidth + 'px';
         panel.style.minWidth = newWidth + 'px';
       }
     });
 
+    // End resize on mouseup
     document.addEventListener('mouseup', () => {
       if (this.isResizing) {
         this.isResizing = false;
@@ -85,10 +99,16 @@ export class PanelComponent implements AfterViewInit {
     });
   }
 
+  /**
+   * Switch active tab
+   */
   selectTab(tab: PanelTab): void {
     this.activeTab = tab;
   }
 
+  /**
+   * Emit close event to parent
+   */
   onClose(): void {
     this.close.emit();
   }

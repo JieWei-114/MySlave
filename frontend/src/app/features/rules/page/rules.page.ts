@@ -2,6 +2,12 @@ import { CommonModule } from '@angular/common';
 import { Component, inject, output, OnInit, effect, signal } from '@angular/core';
 import { RulesStore } from '../store/rules.store';
 import { ChatStore } from '../../chat/store/chat.store';
+import {
+  getEnabledSearchProviders,
+  getEnabledExtractionMethods,
+  hasSearchProviderEnabled,
+  hasExtractionEnabled,
+} from '../service/rules.model';
 
 @Component({
   selector: 'app-rules-panel',
@@ -16,6 +22,12 @@ export class RulesPanelComponent implements OnInit {
   chatStore = inject(ChatStore);
   private lastSessionId = signal<string | null>(null);
 
+  // Helper computed signals for UI
+  enabledSearchProviders = signal<string[]>([]);
+  enabledExtractionMethods = signal<string[]>([]);
+  hasSearchEnabled = signal<boolean>(true);
+  hasExtractionEnabled = signal<boolean>(true);
+
   constructor() {
     // Watch for session changes and update rules accordingly
     effect(() => {
@@ -26,6 +38,17 @@ export class RulesPanelComponent implements OnInit {
       if (currentSessionId && currentSessionId !== lastId) {
         this.lastSessionId.set(currentSessionId);
         this.rulesStore.setCurrentSession(currentSessionId);
+      }
+    });
+
+    // Watch for rules changes and update helper signals
+    effect(() => {
+      const rules = this.rulesStore.rules();
+      if (rules) {
+        this.enabledSearchProviders.set(getEnabledSearchProviders(rules));
+        this.enabledExtractionMethods.set(getEnabledExtractionMethods(rules));
+        this.hasSearchEnabled.set(hasSearchProviderEnabled(rules));
+        this.hasExtractionEnabled.set(hasExtractionEnabled(rules));
       }
     });
   }
@@ -66,8 +89,23 @@ export class RulesPanelComponent implements OnInit {
       this.rulesStore.updateLimit(key as any, undefined);
     } else {
       const numValue = parseInt(value, 10);
-      if (!isNaN(numValue)) {
-        this.rulesStore.updateLimit(key as any, numValue);
+      if (!isNaN(numValue) && numValue > 0) {
+        // Validate ranges
+        if (key === 'webSearchLimit' && numValue > 50) {
+          input.value = '50';
+          this.rulesStore.updateLimit(key as any, 50);
+        } else if (key === 'memorySearchLimit' && numValue > 50) {
+          input.value = '50';
+          this.rulesStore.updateLimit(key as any, 50);
+        } else if (key === 'historyLimit' && numValue > 50) {
+          input.value = '50';
+          this.rulesStore.updateLimit(key as any, 50);
+        } else if (key === 'fileUploadMaxChars' && numValue > 500000) {
+          input.value = '500000';
+          this.rulesStore.updateLimit(key as any, 500000);
+        } else {
+          this.rulesStore.updateLimit(key as any, numValue);
+        }
       }
     }
   }
@@ -81,7 +119,21 @@ export class RulesPanelComponent implements OnInit {
     } else {
       // Max 5000 characters
       const truncated = value.substring(0, 5000);
+      if (truncated !== value) {
+        textarea.value = truncated;
+      }
       this.rulesStore.updateCustomInstructions(truncated);
+    }
+  }
+
+  // Reset to defaults
+  resetToDefaults(): void {
+    if (
+      confirm(
+        'Reset all rules to default values? This will enable free providers and disable paid ones.',
+      )
+    ) {
+      this.rulesStore.resetToDefaults();
     }
   }
 }

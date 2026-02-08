@@ -76,6 +76,12 @@
   letter-spacing: 0.5px;
 }
 
+.reasoning-confidence {
+  margin-left: auto;
+  color: rgba(74, 144, 226, 0.8);
+  font-weight: 600;
+}
+
 .reasoning-content {
   margin-top: 8px;
   padding: 10px;
@@ -84,9 +90,6 @@
   font-size: 13px;
   line-height: 1.5;
   color: rgba(255, 255, 255, 0.85);
-  font-family: 'Courier New', monospace;
-  white-space: pre-wrap;
-  word-wrap: break-word;
 }
 
 .main-content {

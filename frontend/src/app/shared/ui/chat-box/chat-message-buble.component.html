@@ -17,11 +17,37 @@
           {{ showReasoning ? '▼' : '▶' }}
         </span>
         <span class="reasoning-label">AI Thinking Process</span>
+        <span class="reasoning-confidence" *ngIf="meta.confidence_final">
+          ({{ (meta.confidence_final * 100).toFixed(0) }}% confident)
+        </span>
       </button>
-
       <div class="reasoning-content" *ngIf="showReasoning && meta.reasoning">
         {{ meta.reasoning }}
       </div>
+    </div>
+
+    <!-- Source Status Badges -->
+    <div class="source-badges" *ngIf="isAssistant && message.meta?.loaded_sources as sources">
+      <span class="source-badge" *ngIf="!sources.file?.available" title="No file was provided">
+        NO FILE PROVIDED
+      </span>
+      <span
+        class="source-badge"
+        *ngIf="!sources.memory?.available"
+        title="No relevant memories found"
+      >
+        NO RELEVANT MEMORY
+      </span>
+      <span class="source-badge" *ngIf="!sources.web?.available" title="Web search was not used">
+        WEB NOT USED
+      </span>
+      <span
+        class="source-badge factual"
+        *ngIf="message.meta?.has_factual_content"
+        title="Answer based on factual sources"
+      >
+        FACTUAL SOURCES USED
+      </span>
     </div>
 
     <!-- Attachment -->

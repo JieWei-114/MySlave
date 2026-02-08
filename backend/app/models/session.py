@@ -1,14 +1,9 @@
+from __future__ import annotations
+
 from datetime import datetime
 from typing import List
 
 from pydantic import BaseModel, Field
-
-
-class ChatMessage(BaseModel):
-    role: str
-    content: str
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    meta: AssistantMeta | None = None
 
 
 class SessionRules(BaseModel):
@@ -33,3 +28,10 @@ class AssistantMeta(BaseModel):
     reasoning: str | None = None
     citations: list[dict] | None = None
     tools_used: list[str] | None = None
+
+
+class ChatMessage(BaseModel):
+    role: str
+    content: str
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    meta: AssistantMeta | None = None

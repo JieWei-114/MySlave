@@ -1,8 +1,13 @@
-import { Injectable, inject } from '@angular/core';
-import { signal, computed } from '@angular/core';
+/**
+ * Web Search Store
+ */
+import { Injectable, inject, signal, computed } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import { PLATFORM_ID } from '@angular/core';
 import { ChatStore } from '../../chat/store/chat.store';
 import { QuotaInfo, WebSearchResult, WebState } from '../service/web.model';
 
+// Default empty state for new sessions
 const initialState: WebState = {
   q: '',
   results: [],
@@ -13,6 +18,8 @@ const initialState: WebState = {
 @Injectable({ providedIn: 'root' })
 export class WebStore {
   private chatStore = inject(ChatStore);
+  private platformId = inject(PLATFORM_ID);
+  private isBrowser = isPlatformBrowser(this.platformId);
 
   // Per-session state storage
   private sessionWebStates = signal<Record<string, WebState>>({});
@@ -20,7 +27,10 @@ export class WebStore {
   // Current session context
   readonly currentSessionId = computed(() => this.chatStore.currentSessionId());
 
-  // Computed signals for current session
+  /**
+   * Computed State for Active Session
+   */
+
   readonly q = computed(() => {
     const sessionId = this.currentSessionId();
     return sessionId ? (this.sessionWebStates()[sessionId]?.q ?? '') : '';
@@ -42,9 +52,15 @@ export class WebStore {
   });
 
   constructor() {
-    this.loadFromLocalStorage();
+    // Load persisted state from localStorage on startup
+    if (this.isBrowser) {
+      this.loadFromLocalStorage();
+    }
   }
 
+  /**
+   * Get state for current session
+   */
   getState(): WebState {
     const sessionId = this.currentSessionId();
     if (!sessionId) return initialState;
@@ -116,6 +132,7 @@ export class WebStore {
   }
 
   private saveToLocalStorage(): void {
+    if (!this.isBrowser) return;
     try {
       localStorage.setItem('webSearchState', JSON.stringify(this.sessionWebStates()));
     } catch (e) {
@@ -124,6 +141,7 @@ export class WebStore {
   }
 
   private loadFromLocalStorage(): void {
+    if (!this.isBrowser) return;
     try {
       const saved = localStorage.getItem('webSearchState');
       if (saved) {
@@ -137,6 +155,8 @@ export class WebStore {
 
   reset(): void {
     this.sessionWebStates.set({});
-    localStorage.removeItem('webSearchState');
+    if (this.isBrowser) {
+      localStorage.removeItem('webSearchState');
+    }
   }
 }

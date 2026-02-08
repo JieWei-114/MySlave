@@ -25,6 +25,7 @@ export class MemoryPage {
   @Output() close = new EventEmitter<void>();
 
   newMemory = '';
+  newCategory: 'preference_or_fact' | 'important' | 'other' = 'preference_or_fact';
 
   constructor(
     public store: MemoryStore,
@@ -34,14 +35,14 @@ export class MemoryPage {
       const id = this._sessionId();
       if (!id) return;
 
-      console.log('Memory reload for session:', id);
+      console.debug('Memory reload for session:', id);
       this.store.load(id);
     });
   }
 
   add() {
     if (!this.newMemory.trim()) return;
-    this.store.addManual(this.newMemory);
+    this.store.addManual(this.newMemory, this.newCategory);
     this.newMemory = '';
   }
 

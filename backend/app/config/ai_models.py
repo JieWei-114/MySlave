@@ -1,5 +1,7 @@
-# Defines available models for the chat service
+""" 
+Defines available models for the chat service 
 
+"""
 
 AVAILABLE_MODELS = [
     {'id': 'gemma3:1b', 'name': 'Gemma 3', 'description': 'Fast & efficient', 'size': '1B'},

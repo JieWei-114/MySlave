@@ -98,12 +98,38 @@
   background: var(--primary-lite);
   border-radius: var(--radius-md);
   transition: all var(--transition-base);
-  border: none;
 }
 
 .status.loading {
+  animation: pulse 1.5s infinite;
+}
+
+.header-toggle-btn {
+  padding: 8px 16px;
   background: var(--primary-lite);
-  animation: pulse 2s infinite;
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all var(--transition-base);
+  white-space: nowrap;
+}
+
+.header-toggle-btn:hover {
+  background: var(--primary-dark);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.header-toggle-btn.active {
+  background: var(--primary-dark);
+  box-shadow: var(--shadow-lg);
+}
+
+.header-toggle-btn:active {
+  transform: translateY(0);
 }
 
 @keyframes pulse {

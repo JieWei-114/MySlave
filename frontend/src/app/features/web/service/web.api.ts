@@ -1,3 +1,6 @@
+/**
+ * Web Search API Service
+ */
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -9,6 +12,9 @@ export class WebApi {
   private http = inject(HttpClient);
   private config = inject(AppConfigService);
 
+  /**
+   * Perform multi-provider web search
+   */
   webSearch(q: string, sessionId?: string | null): Observable<WebSearchResponse> {
     const params = new URLSearchParams({ q: q });
     if (sessionId) {
@@ -19,6 +25,11 @@ export class WebApi {
     );
   }
 
+  /**
+   * Get remaining API quota for paid providers
+   * Shows how many searches/credits remain for Tavily and Serper.
+   * Used by frontend to display quota status and warnings.
+   */
   getQuotas(): Observable<QuotaInfo> {
     return this.http.get<QuotaInfo>(`${this.config.apiBaseUrl}/web/quotas`);
   }

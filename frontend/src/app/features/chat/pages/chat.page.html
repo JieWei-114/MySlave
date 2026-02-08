@@ -21,6 +21,26 @@
     <span class="status" [class.loading]="store.loading()">
       {{ store.loading() ? 'Thinking...' : 'Ready' }}
     </span>
+
+    <button
+      class="header-toggle-btn"
+      [class.active]="store.followUpEnabled()"
+      (click)="store.toggleFollowUp()"
+      [attr.aria-pressed]="store.followUpEnabled()"
+      title="Toggle follow-up context"
+      aria-label="Toggle follow-up context"
+    >
+      Follow-up: {{ store.followUpEnabled() ? 'On' : 'Off' }}
+    </button>
+
+    <button
+      class="header-toggle-btn"
+      (click)="store.toggleMetadata()"
+      title="Toggle response metadata"
+      aria-label="Toggle response metadata"
+    >
+      Context
+    </button>
   </div>
 
   <div class="chat-window" appAutoScroll (scroll)="onScroll($event)">
@@ -54,6 +74,13 @@
   </div>
 
   <app-error-banner [message]="store.error()" />
+
+  <!-- Context Indicator Component -->
+  <app-context-indicator
+    [visible]="store.showMetadata()"
+    [metadata]="store.currentSessionMetadata()"
+    (visibleChange)="store.toggleMetadata()"
+  ></app-context-indicator>
 
   <div class="chat-input-wrapper">
     <div class="chat-input">

@@ -1,24 +1,33 @@
+/**
+ * Memory Store
+ */
 import { Injectable, signal, inject } from '@angular/core';
 import { MemoryApi } from '../service/memory.api';
 import { Memory } from '../service/memory.model';
 
 @Injectable({ providedIn: 'root' })
 export class MemoryStore {
+  // State
   memories = signal<Memory[]>([]);
   loading = signal(false);
   error = signal('');
   compressing = signal(false);
 
   private memoryApi = inject(MemoryApi);
-  private sessionId: string | null = null;
 
   readonly currentSessionId = signal<string | null>(null);
 
-  addManual(content: string): void {
+  /**
+   * Manually add a memory item
+   */
+  addManual(
+    content: string,
+    category: 'preference_or_fact' | 'important' | 'other' = 'other',
+  ): void {
     const sessionId = this.currentSessionId();
     if (!sessionId) return;
 
-    this.memoryApi.addMemory(content, sessionId).subscribe({
+    this.memoryApi.addMemory(content, sessionId, category).subscribe({
       next: (m) => {
         this.memories.update((list) => [...list, m as Memory]);
       },
@@ -28,6 +37,9 @@ export class MemoryStore {
     });
   }
 
+  /**
+   * Load all memories for a session
+   */
   load(sessionId: string) {
     this.currentSessionId.set(sessionId);
     this.loading.set(true);
@@ -38,6 +50,9 @@ export class MemoryStore {
     });
   }
 
+  /**
+   * Toggle memory enabled/disabled state
+   */
   toggle(m: Memory) {
     const action = m.enabled ? this.memoryApi.disable(m.id) : this.memoryApi.enable(m.id);
 
@@ -48,12 +63,18 @@ export class MemoryStore {
     });
   }
 
+  /**
+   * Delete a memory item
+   */
   delete(m: Memory) {
     this.memoryApi.delete(m.id).subscribe(() => {
       this.memories.update((list) => list.filter((x) => x.id !== m.id));
     });
   }
 
+  /**
+   * Search memories by query string
+   */
   search(q: string) {
     const sessionId = this.currentSessionId();
     if (!sessionId) return;
@@ -63,6 +84,10 @@ export class MemoryStore {
     });
   }
 
+  /**
+   * Compress and synthesize memories using AI
+   * Reduces memory count while preserving important information
+   */
   compress(model: string) {
     const sessionId = this.currentSessionId();
     if (!sessionId || this.compressing()) return;
@@ -83,11 +108,9 @@ export class MemoryStore {
     });
   }
 
-  setSession(sessionId: string) {
-    this.sessionId = sessionId;
-    this.reload(sessionId);
-  }
-
+  /**
+   * Reload memories for current session
+   */
   reload(sessionId: string) {
     this.loading.set(true);
 

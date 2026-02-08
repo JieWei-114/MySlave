@@ -1,26 +1,29 @@
+/**
+ * Rules Store
+ */
 import { Injectable, signal, computed, inject } from '@angular/core';
 import { RulesApiService } from '../service/rules.api';
-import { RulesConfig } from '../service/rules.model';
+import { RulesConfig, DEFAULT_RULES } from '../service/rules.model';
 
 @Injectable({ providedIn: 'root' })
 export class RulesStore {
   private rulesApi = inject(RulesApiService);
 
-  /* ============================
-   *  Session Rules State
-   * ============================ */
+  /**
+   * Per-Session State
+   */
 
   private sessionRules = signal<Record<string, RulesConfig>>({});
   private sessionLoading = signal<Record<string, boolean>>({});
   private sessionError = signal<Record<string, string>>({});
   private sessionSaved = signal<Record<string, boolean>>({});
 
-  // Current session context
+  // Current active session
   readonly currentSessionId = signal<string | null>(null);
 
-  /* ===============================
-   *  Session Rules Computed
-   * =============================== */
+  /**
+   * Session Rules Computed
+   */
 
   readonly rules = computed(() => {
     const sessionId = this.currentSessionId();
@@ -64,9 +67,9 @@ export class RulesStore {
     local: this.rules()?.localExtract ?? false,
   }));
 
-  /* ===============================
-   *  Set the current session context
-   * =============================== */
+  /**
+   * Set the current session context
+   */
 
   setCurrentSession(sessionId: string | null): void {
     this.currentSessionId.set(sessionId);
@@ -75,9 +78,9 @@ export class RulesStore {
     }
   }
 
-  /* ====================================
-   *  Load rules for a specific session
-   * ==================================== */
+  /**
+   * Load rules for a specific session
+   */
 
   loadSessionRules(sessionId: string): void {
     const loading = { ...this.sessionLoading() };
@@ -112,9 +115,9 @@ export class RulesStore {
     });
   }
 
-  /* ========================================
-   *  Toggle a rule for the current session
-   * ======================================== */
+  /**
+   * Toggle a rule for the current session
+   */
 
   toggleSessionRule(key: keyof RulesConfig): void {
     const sessionId = this.currentSessionId();
@@ -157,9 +160,9 @@ export class RulesStore {
     this.updateSessionRules(sessionId, updatedRules);
   }
 
-  /* ====================================
-   *  Update a numeric limit
-   * ==================================== */
+  /**
+   * Update a numeric limit
+   */
 
   updateLimit(
     key: 'webSearchLimit' | 'memorySearchLimit' | 'historyLimit' | 'fileUploadMaxChars',
@@ -183,9 +186,9 @@ export class RulesStore {
     this.updateSessionRules(sessionId, updatedRules);
   }
 
-  /* ====================================
-   *  Update custom instructions
-   * ==================================== */
+  /**
+   * Update custom instructions
+   */
 
   updateCustomInstructions(value: string): void {
     const sessionId = this.currentSessionId();
@@ -206,9 +209,9 @@ export class RulesStore {
     this.updateSessionRules(sessionId, updatedRules);
   }
 
-  /* ====================================
-   *  Update rules for a specific session
-   * ==================================== */
+  /**
+   * Update rules for a specific session
+   */
 
   updateSessionRules(sessionId: string, rules: RulesConfig): void {
     const loading = { ...this.sessionLoading() };
@@ -253,9 +256,9 @@ export class RulesStore {
     });
   }
 
-  /* ====================================
-   *  Clear cached session rules
-   * ==================================== */
+  /**
+   * Clear cached session rules
+   */
 
   clearSessionRules(sessionId: string): void {
     const rules = { ...this.sessionRules() };
@@ -269,5 +272,22 @@ export class RulesStore {
     const errors = { ...this.sessionError() };
     delete errors[sessionId];
     this.sessionError.set(errors);
+  }
+
+  /**
+   * Reset current session rules to defaults
+   */
+
+  resetToDefaults(): void {
+    const sessionId = this.currentSessionId();
+    if (!sessionId) return;
+
+    const defaultRules: RulesConfig = { ...DEFAULT_RULES };
+
+    const rules = { ...this.sessionRules() };
+    rules[sessionId] = defaultRules;
+    this.sessionRules.set(rules);
+
+    this.updateSessionRules(sessionId, defaultRules);
   }
 }

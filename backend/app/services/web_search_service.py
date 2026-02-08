@@ -1,3 +1,20 @@
+"""
+Web Search Service
+
+Multi-provider web search and URL extraction service.
+Supports multiple search providers with automatic fallback and smart routing.
+
+Supported Providers:
+- SearXNG: Self-hosted metasearch (privacy-focused)
+- DuckDuckGo: Simple web search (free)
+- Tavily: Research-focused search (paid API)
+- Serper: Google search proxy (paid API)
+
+URL Extraction:
+- TavilyExtract: AI-powered content extraction (paid API)
+- LocalExtract: Simple HTML parsing (free)
+
+"""
 import logging
 import re
 from typing import Optional
@@ -10,6 +27,7 @@ from app.config.web_providers.serper import SerperProvider, remaining_serper_quo
 from app.config.web_providers.tavily import TavilyProvider, remaining_tavily_quota
 from app.config.web_providers.tavily_extract import extract_url
 from app.core.db import rules_collection, sessions_collection
+from app.models.dto import RulesConfig
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +42,8 @@ RESULTS_PER_PROVIDER = settings.WEB_SEARCH_RESULTS_PER_PROVIDER
 ADVANCE_SEARCH_TOTAL = settings.WEB_SEARCH_ADVANCE_TOTAL
 
 # Auto-routing keywords for Tavily (research-focused queries)
-TAVILY_KEYWORDS = ['research', 'deep dive', 'detailed', 'analyze', 'comprehensive', 'thorough']
+# If query contains these words and Tavily is enabled, route to Tavily
+TAVILY_KEYWORDS = settings.WEB_TAVILY_KEYWORDS
 
 URL_PATTERN = re.compile(
     r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+',
@@ -35,19 +54,14 @@ URL_PATTERN = re.compile(
 # Rules
 # ============================================================
 
-DEFAULT_RULES = {
-    'searxng': True,
-    'duckduckgo': True,
-    'tavily': False,
-    'serper': False,
-    'tavilyExtract': False,
-    'localExtract': True,
-    'advanceSearch': False,
-    'advanceExtract': False,
-}
+DEFAULT_RULES = RulesConfig().model_dump()
 
 
 def get_enabled_rules(session_id: Optional[str] = None) -> dict:
+    """
+    Get enabled search providers and search settings for a session.
+
+    """
     try:
         if session_id:
             session = sessions_collection.find_one(
@@ -78,6 +92,10 @@ async def maybe_web_search(
     limit: Optional[int] = None,
     session_id: Optional[str] = None,
 ) -> list[dict]:
+    """
+    Perform multi-provider web search with intelligent routing.
+
+    """
     if not query or not query.strip():
         logger.warning('Empty search query')
         return []

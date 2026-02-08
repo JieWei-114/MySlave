@@ -9,6 +9,14 @@
       Memory
     </button>
     <button
+      class="panel-button-f"
+      [class.active]="activeTab === 'files'"
+      (click)="selectTab('files')"
+      title="Files"
+    >
+      Files
+    </button>
+    <button
       class="panel-button-w"
       [class.active]="activeTab === 'web'"
       (click)="selectTab('web')"
@@ -30,6 +38,9 @@
   <div class="panel-content">
     <div class="panel-tab-content" *ngIf="activeTab === 'memory'">
       <app-memory-panel [sessionId]="sessionId" (close)="onClose()" />
+    </div>
+    <div class="panel-tab-content" *ngIf="activeTab === 'files'">
+      <app-files-panel [sessionId]="sessionId" />
     </div>
     <div class="panel-tab-content" *ngIf="activeTab === 'web'">
       <app-web-search (close)="onClose()" />

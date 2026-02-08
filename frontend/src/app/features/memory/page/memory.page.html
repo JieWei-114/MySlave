@@ -13,6 +13,9 @@
         {{ m.content }}
         <span class="tag" *ngIf="m.source === 'auto'">Auto</span>
         <span class="tag" *ngIf="m.source === 'compress'">Compress</span>
+        <span class="tag" *ngIf="m.category === 'preference_or_fact'">Preference/Fact</span>
+        <span class="tag" *ngIf="m.category === 'important'">Important</span>
+        <span class="tag" *ngIf="m.category === 'other'">Other</span>
       </div>
 
       <button class="btn-delete" (click)="store.delete(m)" title="Delete memory">🗑</button>
@@ -26,6 +29,11 @@
 
   <div class="memory-add-wrapper">
     <div class="memory-add">
+      <select [(ngModel)]="newCategory" class="memory-category">
+        <option value="preference_or_fact">Preference/Fact</option>
+        <option value="important">Important</option>
+        <option value="other">Other</option>
+      </select>
       <textarea
         appAutoResize
         [(ngModel)]="newMemory"

@@ -1,3 +1,7 @@
+/**
+ * Chat Page Component
+ * Main interface for chatting with AI
+ */
 import {
   Component,
   OnInit,
@@ -26,8 +30,7 @@ import { SkeletonComponent } from '../../../shared/ui/skeleton/skeleton.componen
 import { ErrorBoundaryComponent } from '../../../shared/ui/error-boundary/error-boundary.component';
 import { AppConfigService } from '../../../core/services/app-config.services';
 import { AutoResizeTextareaDirective } from '../../../shared/directives/auto-resize-textarea.directive';
-
-// import { PrefixPipe } from '../../../shared/pipes/prefix.pipe';
+import { ContextIndicatorComponent } from '../../../shared/ui/context-indicator/context-indicator.component';
 
 @Component({
   selector: 'app-chat-page',
@@ -43,6 +46,7 @@ import { AutoResizeTextareaDirective } from '../../../shared/directives/auto-res
     SkeletonComponent,
     ErrorBoundaryComponent,
     AutoResizeTextareaDirective,
+    ContextIndicatorComponent,
     // PrefixPipe
   ],
   templateUrl: './chat.page.html',
@@ -74,13 +78,14 @@ export class ChatPage implements OnInit, AfterViewInit {
     public store: ChatStore,
     route: ActivatedRoute,
   ) {
-    route.paramMap.subscribe((params) => {
+    // Watch for route parameter changes (session ID)
+    route.paramMap.subscribe((params: any) => {
       const id = params.get('id') ?? 'default';
       this.store.selectSession(id);
       this.isErrorDismissed.set(false);
     });
 
-    // Watch for draft message changes and auto-resize
+    // Auto-resize textarea when draft message changes
     effect(() => {
       this.store.draftMessage();
       this.triggerResize();
@@ -88,18 +93,23 @@ export class ChatPage implements OnInit, AfterViewInit {
   }
 
   ngOnInit(): void {
+    // Load available AI models from backend
     this.loadModels();
   }
 
   ngAfterViewInit(): void {
-    // Lifecycle hook (effect is already in constructor)
+    // Lifecycle hook - resize effect is in constructor
   }
 
+  /**
+   * Programmatically trigger textarea auto-resize
+   * Called when content is inserted programmatically
+   */
   triggerResize(): void {
     // Only run in browser environment
     if (!isPlatformBrowser(this.platformId) || typeof window === 'undefined') return;
 
-    // Trigger resize after programmatic text insertion
+    // Defer to next tick to ensure DOM is updated
     setTimeout(() => {
       const textarea = this.textareaRef?.nativeElement;
       if (textarea) {
@@ -114,9 +124,13 @@ export class ChatPage implements OnInit, AfterViewInit {
     });
   }
 
+  /**
+   * Load available AI models from backend API
+   * Falls back to default models if API fails
+   */
   private loadModels(): void {
     this.http.get<AIModel[]>(`${this.config.apiBaseUrl}/chat/models`).subscribe({
-      next: (data) => this.models.set(data),
+      next: (data: any) => this.models.set(data),
       error: () => {
         console.warn('Failed to load models from API, using defaults');
         this.models.set(AVAILABLE_MODELS);
@@ -124,30 +138,44 @@ export class ChatPage implements OnInit, AfterViewInit {
     });
   }
 
+  /**
+   * Send message to AI with optional file attachment
+   * Validates content and handles file attachments
+   */
   send(): void {
     this.isErrorDismissed.set(false);
     let content = this.store.draftMessage().trim();
 
     if (!content) return;
 
+    // Attach file content if selected
     const attachment = this.fileContent()
       ? { filename: this.selectedFileName(), content: this.fileContent() }
       : undefined;
 
     this.store.sendMessage(content, attachment);
+
+    // Clear draft and file selection
     this.store.clearDraft();
     this.selectedFileName.set('');
     this.fileContent.set('');
     this.fileError.set('');
   }
 
+  /**
+   * Handle AI model selection change
+   */
   onModelChange(modelId: string): void {
-    const model = this.models().find((m) => m.id === modelId);
+    const model = this.models().find((m: any) => m.id === modelId);
     if (model) {
       this.store.setModel(model);
     }
   }
 
+  /**
+   * Handle Enter key in textarea
+   * Enter = send, Shift+Enter = new line
+   */
   onKeyDown(event: KeyboardEvent): void {
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
@@ -155,10 +183,17 @@ export class ChatPage implements OnInit, AfterViewInit {
     }
   }
 
+  /**
+   * Check if user is currently typing (for UI feedback)
+   */
   get isTyping(): boolean {
     return !!this.store.draftMessage().trim() && !this.store.loading();
   }
 
+  /**
+   * Handle scroll event for infinite loading
+   * Load older messages when user scrolls to top
+   */
   onScroll(e: Event) {
     const el = e.target as HTMLElement;
     if (el.scrollTop < 20) {
@@ -166,12 +201,17 @@ export class ChatPage implements OnInit, AfterViewInit {
     }
   }
 
+  /**
+   * Handle file selection from input
+   * Supports both text files (read in browser) and binary files (uploaded to backend)
+   */
   onFileSelected(event: Event): void {
     this.fileError.set('');
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
 
+    // Validate file size
     const maxBytes = this.config.fileUploadMaxBytes;
     if (file.size > maxBytes) {
       this.fileError.set('File too large. Max 10MB.');
@@ -179,13 +219,13 @@ export class ChatPage implements OnInit, AfterViewInit {
       return;
     }
 
-    // Check if it's a binary file (PDF, Word)
-    const isBinary = this.config.binaryExtensions.some(ext =>
-      file.name.toLowerCase().endsWith(ext)
+    // Check if binary file (requires server-side extraction)
+    const isBinary = this.config.binaryExtensions.some((ext: any) =>
+      file.name.toLowerCase().endsWith(ext),
     );
 
     if (isBinary) {
-      // Upload binary file to backend for extraction
+      // Upload binary file (PDF, Word, etc.) to backend for extraction
       this.uploadFileToBackend(file);
       input.value = '';
     } else {
@@ -214,6 +254,10 @@ export class ChatPage implements OnInit, AfterViewInit {
     }
   }
 
+  /**
+   * Upload binary file to backend for text extraction
+   * Backend handles PDF, Word, and other complex formats
+   */
   private uploadFileToBackend(file: File): void {
     const formData = new FormData();
     formData.append('file', file);

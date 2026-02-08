@@ -9,6 +9,10 @@ from readability import Document
 
 from app.config.settings import settings
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 MAX_CHARS = settings.LOCAL_EXTRACT_MAX_CHARS
 MAX_BYTES = settings.LOCAL_EXTRACT_MAX_BYTES
 REQUEST_TIMEOUT = settings.LOCAL_EXTRACT_TIMEOUT
@@ -42,17 +46,21 @@ async def _fetch_html(url: str) -> Optional[str]:
             resp = await client.get(url)
             resp.raise_for_status()
 
+            if resp.content and len(resp.content) > MAX_BYTES:
+                logger.warning('Local extract skipped (response too large): %s bytes', len(resp.content))
+                return None
+
             ctype = resp.headers.get('content-type', '').lower()
             if not any(t in ctype for t in ALLOWED_CONTENT_TYPES):
                 return None
 
             if not resp.text.strip():
-                print('[fetch_html] empty body returned')
+                logger.debug('Local extract: empty body returned')
                 return None
 
             return resp.text
         except Exception as e:
-            print('[fetch_html ERROR]', type(e).__name__, e)
+            logger.warning('Local extract fetch error: %s', e)
             return None
 
 
@@ -69,9 +77,7 @@ def _extract_main_text(html: str) -> str:
 
 async def extract_url_local(url: str) -> str:
     # Download and extract main text from a URL with safety limits.
-
-    print('local_extract.py LOADED')
-    print(f'extract_url_local CALLED with {url}')
+    logger.info('Local extract called for %s', url)
 
     try:
         html = await _fetch_html(url)

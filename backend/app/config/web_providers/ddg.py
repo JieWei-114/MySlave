@@ -1,10 +1,13 @@
 import asyncio
+import logging
 from typing import Any
 
 from ddgs import DDGS
 
 from app.config.settings import settings
 from app.config.web_providers.base import WebSearchProvider
+
+logger = logging.getLogger(__name__)
 
 
 class DuckDuckGoProvider(WebSearchProvider):
@@ -20,7 +23,8 @@ class DuckDuckGoProvider(WebSearchProvider):
             try:
                 with DDGS(timeout=timeout) as ddgs:
                     return list(ddgs.text(query, max_results=limit))
-            except Exception:
+            except Exception as e:
+                logger.warning('DDG search failed: %s', e)
                 return []
 
         results = await asyncio.to_thread(_search)
@@ -35,3 +39,4 @@ class DuckDuckGoProvider(WebSearchProvider):
             for r in results
             if r.get('href')
         ]
+    

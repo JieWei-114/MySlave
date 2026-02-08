@@ -1,5 +1,6 @@
 from typing import Optional
 
+from pydantic import Field
 from pydantic_settings import BaseSettings
 
 
@@ -20,7 +21,7 @@ class Settings(BaseSettings):
     OLLAMA_TIMEOUT: Optional[int] = None
 
     # CORS SETTINGS
-    CORS_ORIGINS: list[str] = None
+    CORS_ORIGINS: list[str] = Field(default_factory=list)
 
     # ============================================================
     # CENTRALIZED LIMIT SYSTEM
@@ -44,7 +45,7 @@ class Settings(BaseSettings):
     CHAT_WEB_TOTAL_MAX_CHARS: int = 6000
 
     # --- MEMORY LIMITS ---
-    # How many memories to search/retrieve
+    # How many memories to search/retrieve (default for all contexts)
     MEMORY_SEARCH_LIMIT: int = 10
 
     # Minimum similarity threshold for memory matching
@@ -79,6 +80,11 @@ class Settings(BaseSettings):
     # Max characters extracted from file (at extraction time)
     FILE_UPLOAD_MAX_CHARS: int = 50000
 
+    # Allowed binary file extensions for server-side extraction
+    FILE_UPLOAD_ALLOWED_EXTENSIONS: list[str] = Field(
+        default_factory=lambda: ['.pdf', '.doc', '.docx']
+    )
+
     # Max file content shown in prompt
     CHAT_FILE_CONTENT_MAX_CHARS: int = 30000
 
@@ -96,37 +102,54 @@ class Settings(BaseSettings):
     # --- FEATURES ---
     CHAT_ENABLE_RESULT_RANKING: bool = True
 
+    # --- API DEFAULTS ---
+    # Default limits for API endpoints (can be overridden by query params)
+    # Note: API uses same limit as internal search for consistency
+    API_MESSAGES_DEFAULT_LIMIT: int = 20
+
+    # Content extraction and analysis
+    EXTRACT_KEY_POINTS_MAX: int = 3  # Max key points to extract from URL content
+    KEY_POINT_EXTRACTION_SAMPLE_SIZE: int = 30  # Sample first N sentences
+
+
+    # Auto-routing keywords for research-focused queries (Tavily)
+    WEB_TAVILY_KEYWORDS: list[str] = Field(
+        default_factory=lambda: ['research', 'deep dive', 'detailed', 'analyze', 'comprehensive', 'thorough']
+    )
+
     # ============================================================
     # PROVIDER-SPECIFIC SETTINGS
     # ============================================================
     # DuckDuckGo (DDG) - Free search engine
-    DDG_TIMEOUT: float = None
-    DDG_LIMIT: str | None = None
+    DDG_TIMEOUT: float = 10.0
+    DDG_LIMIT: int | None = None
 
     # SearXNG - Self-hosted metasearch engine
     SEARXNG_URL: Optional[str] = None
-    SEARXNG_TIMEOUT: float = None
-    SEARXNG_LIMIT: str | None = None
+    SEARXNG_TIMEOUT: float = 10.0
+    SEARXNG_LIMIT: int | None = None
 
     # Serper - Google Search API (paid, quota-limited)
     SERPER_URL: str | None = None
     SERPER_API_KEY: str | None = None
+    SERPER_LIMIT: int | None = None  # Results per search
     SERPER_TOTAL_LIMIT: int = None  # Monthly API quota
-    SERPER_TIMEOUT: float = None
+    SERPER_TIMEOUT: float = 20.0
 
     # Tavily - Research API (paid, quota-limited)
     TAVILY_URL: str | None = None
     TAVILY_API_KEY: Optional[str] = None
-    TAVILY_TIMEOUT: float = None
+    TAVILY_LIMIT: int | None = None  # Results per search
+    TAVILY_TIMEOUT: float = 20.0
     TAVILY_MONTHLY_LIMIT: int = None  # Monthly API quota
 
     # WEB EXTRACTION SETTINGS
-    LOCAL_EXTRACT_MAX_CHARS: int = None
-    LOCAL_EXTRACT_MAX_BYTES: int = None
-    LOCAL_EXTRACT_TIMEOUT: float = None
+    LOCAL_EXTRACT_MAX_CHARS: int = 20000
+    LOCAL_EXTRACT_MAX_BYTES: int = 1_000_000
+    LOCAL_EXTRACT_TIMEOUT: float = 10.0
 
-    TAVILY_EXTRACT_MAX_LENGTH: int = None
-    TAVILY_EXTRACT_TIMEOUT: float = None
+    TAVILY_EXTRACT_MAX_LENGTH: int = 10000
+    TAVILY_EXTRACT_TIMEOUT: float = 20.0
 
     # ============================================================
     # MEMORY AUTO-SAVE SETTINGS
@@ -135,44 +158,200 @@ class Settings(BaseSettings):
     MEMORY_MIN_ASSISTANT_LENGTH: int = None  # Min chars in assistant response to remember
     MEMORY_MIN_CONVERSATION_LENGTH: int = None  # Min combined user+assistant length to remember
 
+    # Memory function defaults
+    MEMORY_DEFAULT_CONFIDENCE: float = 0.95  # Default confidence for new memories
+
+    # ============================================================
+    # CONTEXT SOURCE CONFIDENCE LEVELS
+    # ============================================================
+    # Used by chat service to score different information sources
+    CONFIDENCE_FILE: float = 0.99  # User-uploaded files
+    CONFIDENCE_MEMORY: float = 0.85  # Stored memories
+    CONFIDENCE_WEB: float = 0.65  # Web search results
+    CONFIDENCE_HISTORY: float = 0.0  # Conversation history (contextual only, not counted in confidence)
+    CONFIDENCE_FOLLOW_UP: float = 0.0  # Follow-up context (contextual only, not counted in confidence)
+    CONFIDENCE_NONE: float = 0.3  # No context available
+
+    # ============================================================
+    # TEXT PROCESSING LIMITS
+    # ============================================================
+    TEXT_MIN_LENGTH_FOR_PROCESSING: int = 100  # Min chars to process text
+    TEXT_MIN_SENTENCE_LENGTH: int = 10  # Min chars for valid sentence
+    TEXT_SENTENCE_WEIGHT_DENOMINATOR: int = 150  # Used in sentence scoring
+    TEXT_QUERY_TRUNCATION_LIMIT: int = 300  # Max chars for query preview
+    TEXT_REASONING_TRUNCATION_LIMIT: int = 2000  # Max chars for reasoning storage
+
+    # Memory processing
+    MEMORY_DB_QUERY_LIMIT: int = 100  # Max results from DB query
+    MEMORY_TEXT_FALLBACK_LIMIT: int = 500  # Fallback truncation
+    MEMORY_KEY_TRUNCATION_LIMIT: int = 100  # Max chars for memory key
+    MEMORY_LOG_TRUNCATION_LIMIT: int = 50  # Max chars in log messages
+
+    # File attachment settings
+    FILE_ATTACHMENT_MAX_CHARS: int = 100000
+    FILE_ATTACHMENT_EXPIRY_DAYS: int = 30
+
+    # ============================================================
+    # FACTUAL GUARD THRESHOLDS
+    # ============================================================
+    # Used for post-answer validation (unverified entity detection)
+    FACTUAL_GUARD_LOW_CAP: float = 0.6  # Confidence cap for low risk
+    FACTUAL_GUARD_MED_CAP: float = 0.5  # Confidence cap for medium risk
+    FACTUAL_GUARD_HIGH_CAP: float = 0.4  # Confidence cap for high risk
+    FACTUAL_GUARD_MED_UNVERIFIED: int = 3  # Threshold for medium risk
+    FACTUAL_GUARD_HIGH_UNVERIFIED: int = 6  # Threshold for high risk
+
+    # ============================================================
+    # TEXT PROCESSING WEIGHTS & SCORING
+    # ============================================================
+    # Sentence scoring weights (for key point extraction)
+    SENTENCE_SCORE_POSITION_WEIGHT: float = 0.6  # Weight for sentence position
+    SENTENCE_SCORE_LENGTH_WEIGHT: float = 0.4  # Weight for sentence length
+    
+    # Text truncation limits (for logging and previews)
+    TRUNCATE_ANSWER_LONG: int = 300  # Long answer preview
+
+    # Default confidence values
+    CONFIDENCE_UNCERTAINTY: float = 0.7  # Threshold for uncertainty detection (used by entity_validation_service)
+    
     # ============================================================
     # SYSTEM INSTRUCTIONS
     # ============================================================
     CHAT_SYSTEM_INSTRUCTIONS: str = """
 SYSTEM INSTRUCTIONS:
-You are a helpful, reliable AI assistant.
+You are a helpful, reliable AI assistant capable of using multiple sources.
 
-General rules:
-- Answer the user directly and clearly.
-- Use information from web search, URL extraction, files, and memory when provided.
-- If information is incomplete or uncertain, say so honestly.
+You must:
+- Always understand the user’s question before answering. 
+- Decide which sources (if any) are relevant.
+- Do NOT invent information.
+- Do NOT assume unavailable sources.
 
-You MAY generate internal reasoning.
-- This reasoning is stored separately and is NEVER shown to the user
-- unless explicitly requested by the UI.
+Decide whether the question is:
+- a new question, or a follow-up question
 
-When web search results are provided:
-- Synthesize information from multiple sources.
-- Prefer authoritative and recent sources.
-- Cite sources in plain text when relevant.
+STEP 1: Clarify User Intent (ALWAYS FIRST)
+- Restate the user’s question in your own words.
+- Identify the user’s intent:
+- information, explanation, clarification, continuation or follow-up
 
-When file content is provided:
-- Use the file as a primary source.
-- Reference specific sections when helpful.
-- Ask clarifying questions if needed.
+Rules:
+- Do not reference any source.
+- Do not answer the question in this step.
 
-When memory is provided:
-- Use it only when relevant.
-- Maintain conversation continuity.
+STEP 2: Context Resolution (Follow-Up Handling)
+- Determine whether the current question is a follow-up.
 
-Style:
-- Be concise but thorough.
-- Use markdown only when it improves readability.
+If the question is a follow-up:
+- Treat the previous assistant answer as the PRIMARY CONTEXT.
+- Resolve all pronouns and vague references against this primary context first.
+- Consider how the current question refers to that answer.
+- Decide whether the primary context alone is sufficient.
+- Do not introduce a new topic.
+
+If the question is not a follow-up:
+- Treat it as a standalone question.
+
+Vague References Rule
+- Follow-up mode: resolve to PRIMARY CONTEXT
+- Non-follow-up: resolve to the most recent relevant mention in conversation history
+- If still ambiguous: ask the user to clarify
+- Follow-up content is contextual, not factual by itself.
+
+STEP 3: Source Eligibility Gate
+Based on intent and context resolution, evaluate each source:
+- FILES
+- MEMORY
+- CONVERSATION HISTORY
+- WEB
+
+For each source, mark it as:
+- REQUIRED
+- OPTIONAL
+- NOT USED
+
+Rules:
+If any REQUIRED source is missing or unavailable:
+- Clearly state that the question cannot be fully answered.
+- Do not retrieve, analyze, or infer from other sources yet.
+- Do not assume a source exists unless it is confirmed.
+
+STEP 4: Source Reasoning (ONLY FOR ELIGIBLE SOURCES)
+For each source marked REQUIRED or OPTIONAL, specify:
+SOURCE: FILE / MEMORY / HISTORY / WEB
+INTENDED USE: factual grounding / support / continuity
+EXPECTED CONTRIBUTION: what this source should provide
+LIMITATION: what this source cannot guarantee
+
+Rules:
+- Do not fabricate findings.
+- If no concrete information is available, state that explicitly.
+
+SOURCE USAGE RULES & PRIORITY
+1. FILES (Highest Priority)
+- Always read available file content each turn.
+- Files are authoritative primary sources.
+- If file content conflicts with memory or web, FILES take priority.
+- Use file content to answer the user’s question, not just summarize it.
+
+2. PRIMARY CONTEXT (Follow-Up Mode Only)
+- The previous assistant answer is the primary reference.
+- Resolve all references against it first.
+- History, memory, and web are secondary in follow-up mode.
+
+3. CONVERSATION HISTORY
+Non-follow-up mode: important for understanding context.
+Follow-up mode: background only.
+- Use strictly to maintain coherence when primary context is insufficient.
+- If the required information cannot be resolved from PRIMARY CONTEXT, use conversation history strictly as a reference to maintain coherence.
+
+4. MEMORY (Preferences & Confirmed Facts Only)
+- Used for long-term consistency.
+Does not contain:
+- temporary context (use history)
+- real-time information (use web)
+- If memory conflicts with fresh web data, prefer web.
+
+5. WEB SEARCH
+- Used for verification and up-to-date information.
+- Considered supporting, not authoritative over files.
+- Prefer recent and authoritative sources.
+
+When citing:
+“According to [SOURCE], …”
+
+STEP 5: Answer Construction Plan
+Before answering, determine:
+- What can be answered directly and confidently
+- What requires uncertainty, qualification, or clarification
+- What information is missing or unverifiable
+- What is the primary source of truth (if any)
+
+FINAL RESPONSE RULES
+Before responding, verify:
+- Am I answering the actual user question?
+- Did I avoid using missing, disallowed, or assumed sources?
+- Are all assumptions explicitly stated?
+- Do I need to ask for clarification before answering?
+
+When information is complete:
+- Answer clearly and confidently.
+
+When information is incomplete or uncertain:
+- You are allow to say “I’m not sure yet” or “This cannot be fully determined.”
+- Explain what information is missing.
+- Ask for additional information only if necessary.
+- Do not guess or assume.
+- Do not answer if grounding is insufficient.
+
+HARD CONSTRAINTS (NON-NEGOTIABLE)
+- Do not assume a file exists unless it was successfully read.
+- Do not invent information under any circumstance.
+
 """.strip()
 
     class Config:
         env_file = '.env'
         case_sensitive = True
-
 
 settings = Settings()

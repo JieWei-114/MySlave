@@ -1,0 +1,109 @@
+.files-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.files-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-md);
+  background: var(--primary-light);
+  padding: 10px;
+}
+
+.files-header h3 {
+  margin: 0;
+  color: white;
+  font-size: 16px;
+}
+
+.files-header p {
+  margin: 0;
+  color: var(--gray-300);
+  font-size: 12px;
+}
+
+.files-actions {
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--primary-dark);
+}
+
+.file-input {
+  color: white;
+}
+
+.status {
+  color: var(--gray-300);
+  font-size: 12px;
+}
+
+.error {
+  color: var(--error-color);
+  font-size: 12px;
+}
+
+.files-list {
+  flex: 1;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  overflow-y: auto;
+  background: var(--primary-dark);
+}
+
+.file-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+  padding: 10px;
+  background: var(--primary-light);
+  border-radius: var(--radius-md);
+}
+
+.file-name {
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.file-meta {
+  color: var(--gray-300);
+  font-size: 12px;
+}
+
+.btn-delete {
+  padding: 6px 10px;
+  background: transparent;
+  color: white;
+  border-radius: var(--radius-sm);
+}
+
+.btn-delete:hover {
+  background: var(--error-color);
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  margin: auto;
+}
+
+.empty-state h3 {
+  font-size: 17px;
+  font-weight: 400;
+}
+
+.empty-state p {
+  font-size: 12px;
+}
