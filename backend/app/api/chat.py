@@ -110,6 +110,7 @@ async def stream_message(
     session_id: str,
     content: str,
     model: str,
+    reasoning: bool = False,
 ):
     """
     Stream chat response using Server-Sent Events (SSE).
@@ -118,7 +119,7 @@ async def stream_message(
 
     """
     try:
-        logger.info(f'Streaming message for session {session_id}, content_len={len(content)}, model={model}')
+        logger.info(f'Streaming message for session {session_id}, content_len={len(content)}, model={model}, reasoning={reasoning}')
         
         async def event_generator():
             try:
@@ -126,6 +127,7 @@ async def stream_message(
                     session_id,
                     content,
                     model,
+                    reasoning_enabled=reasoning,
                 ):
 
                     if isinstance(chunk, bytes):

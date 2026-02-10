@@ -33,6 +33,25 @@
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
 }
 
+.panel-button-f {
+  padding: 10px;
+  border-radius: 0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: var(--primary-lite);
+  color: #ffffff;
+}
+
+.panel-button-f:hover {
+  color: var(--gray-400);
+}
+
+.panel-button-f.active {
+  background: var(--primary-lite);
+  color: #ffffff;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
 .panel-button-w {
   padding: 10px;
   border-radius: 0;

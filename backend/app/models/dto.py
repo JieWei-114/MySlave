@@ -90,6 +90,7 @@ class RulesConfig(BaseModel):
 
     customInstructions: str = ''
     followUpEnabled: bool = False
+    reasoningEnabled: bool = False
 
 
 class ReorderSessionsRequest(BaseModel):

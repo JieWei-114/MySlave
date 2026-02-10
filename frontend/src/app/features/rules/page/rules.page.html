@@ -25,39 +25,30 @@
     @if (rulesStore.currentSessionId()) {
       <div class="session-rules-header">
         <div class="session-info">
-          <h3>Session Rules & Settings</h3>
-          <p>Customize search providers, limits, and AI behavior for this chat session</p>
+          <h3>Rules & Settings</h3>
+          <p>Customize search providers, limits, and AI behavior</p>
         </div>
         <button class="reset-button" (click)="resetToDefaults()" title="Reset to default settings">
-          Reset to Defaults
+          Reset Settings
         </button>
       </div>
-
-      <!-- Active Providers Summary -->
-      @if (hasSearchEnabled() && enabledSearchProviders().length > 0) {
-        <div class="providers-summary">
-          <span class="summary-label">Active Search:</span>
-          <span class="summary-value">{{ enabledSearchProviders().join(', ') }}</span>
-        </div>
-      }
-      @if (!hasSearchEnabled()) {
-        <div class="providers-warning">
-          No search providers enabled. Web search will not work.
-        </div>
-      }
     }
 
     <!-- Web Search Providers Section -->
-    <div class="rules-section">
-      <h3>Web Search Providers</h3>
-      <p class="section-description">
-        Enable or disable search providers for web queries. 
-        <span class="info-badge">Free providers enabled by default</span>
-      </p>
+    <div class="rules-section yellow">
+      <h3>
+        Web Search Providers
+        @if (!hasSearchEnabled()) {
+          <div class="providers-warning">
+            No search providers enabled. Web search will not work.
+          </div>
+        }
+      </h3>
+      <p class="section-description">Enable or disable search providers for web queries.</p>
 
       <div class="rule-item">
         <div class="rule-info">
-          <span class="rule-name">SearXNG <span class="badge badge-free">FREE</span></span>
+          <span class="rule-name">SearXNG</span>
           <span class="rule-desc">Privacy-focused meta-search engine (Self-hosted)</span>
         </div>
         <label class="toggle-switch">
@@ -72,8 +63,8 @@
 
       <div class="rule-item">
         <div class="rule-info">
-          <span class="rule-name">DuckDuckGo <span class="badge badge-free">FREE</span></span>
-          <span class="rule-desc">Privacy-focused search engine (No API key required)</span>
+          <span class="rule-name">DuckDuckGo</span>
+          <span class="rule-desc">Privacy-focused search engine</span>
         </div>
         <label class="toggle-switch">
           <input
@@ -87,8 +78,8 @@
 
       <div class="rule-item">
         <div class="rule-info">
-          <span class="rule-name">Tavily <span class="badge badge-paid">API KEY</span></span>
-          <span class="rule-desc">AI-powered research search (Requires API key in backend .env)</span>
+          <span class="rule-name">Tavily</span>
+          <span class="rule-desc">AI-powered research search (Requires API key)</span>
         </div>
         <label class="toggle-switch">
           <input
@@ -102,8 +93,8 @@
 
       <div class="rule-item">
         <div class="rule-info">
-          <span class="rule-name">Serper <span class="badge badge-paid">API KEY</span></span>
-          <span class="rule-desc">Google Search API (Requires API key in backend .env)</span>
+          <span class="rule-name">Serper</span>
+          <span class="rule-desc">Google Search API (Requires API key)</span>
         </div>
         <label class="toggle-switch">
           <input
@@ -118,9 +109,9 @@
       <!-- Advance Search Toggle -->
       <div class="rule-item advance-mode">
         <div class="rule-info">
-          <span class="rule-name">Advance Search <span class="badge badge-advanced">ADVANCED</span></span>
+          <span class="rule-name">Advance Search</span>
           <span class="rule-desc"
-            >Query all enabled providers simultaneously and combine results (enables all search providers)</span
+            >Query all enabled providers simultaneously and combine results</span
           >
         </div>
         <label class="toggle-switch">
@@ -135,14 +126,16 @@
     </div>
 
     <!-- Content Extraction Section -->
-    <div class="rules-section">
+    <div class="rules-section lite-yellow">
       <h3>Content Extraction</h3>
       <p class="section-description">Enable or disable methods for extracting content from URLs</p>
 
       <div class="rule-item">
         <div class="rule-info">
-          <span class="rule-name">Tavily Extract <span class="badge badge-paid">API KEY</span></span>
-          <span class="rule-desc">Cloud-based extraction (Requires API key in backend .env)</span>
+          <span class="rule-name"
+            >Tavily Extrac</span
+          >
+          <span class="rule-desc">Cloud-based extraction</span>
         </div>
         <label class="toggle-switch">
           <input
@@ -156,8 +149,10 @@
 
       <div class="rule-item">
         <div class="rule-info">
-          <span class="rule-name">Local Extract <span class="badge badge-free">FREE</span></span>
-          <span class="rule-desc">Local content extraction using readability (No API key required)</span>
+          <span class="rule-name">Local Extract</span>
+          <span class="rule-desc"
+            >Local content extraction using readability (No API key required)</span
+          >
         </div>
         <label class="toggle-switch">
           <input
@@ -172,8 +167,12 @@
       <!-- Advance Extract Toggle -->
       <div class="rule-item advance-mode">
         <div class="rule-info">
-          <span class="rule-name">Advance Extract <span class="badge badge-advanced">ADVANCED</span></span>
-          <span class="rule-desc">Use both extraction methods and combine results (enables all extraction methods)</span>
+          <span class="rule-name"
+            >Advance Extract <span class="badge badge-advanced">ADVANCED</span></span
+          >
+          <span class="rule-desc"
+            >Use both extraction methods and combine results (enables all extraction methods)</span
+          >
         </div>
         <label class="toggle-switch">
           <input
@@ -184,114 +183,98 @@
           <span class="slider"></span>
         </label>
       </div>
+    </div>
 
-      <!-- Customizable Limits Section -->
-      <div class="rules-section">
-        <h3>Custom Limits</h3>
-        <p class="section-description">
-          Override default limits for this session (leave blank to use defaults)
-        </p>
+    <!-- Customizable Limits Section -->
+    <div class="rules-section yellow">
+      <h3>Custom Limits</h3>
+      <p class="section-description">
+        Override default limits for this session <br> (leave blank as defaults)
+      </p>
 
-        <div class="limit-item">
-          <div class="limit-info">
-            <span class="limit-name">Web Search Results</span>
-            <span class="limit-desc">How many results to retrieve per search (default: 10)</span>
-          </div>
-          <input
-            type="number"
-            min="1"
-            max="50"
-            [value]="rulesStore.rules()?.webSearchLimit ?? ''"
-            (blur)="updateLimit('webSearchLimit', $event)"
-            placeholder="Default: 10"
-            class="limit-input"
-          />
+      <div class="limit-item">
+        <div class="limit-info">
+          <span class="limit-name">Web Search Results</span>
+          <span class="limit-desc">How many results to retrieve per search</span>
         </div>
-
-        <div class="limit-item">
-          <div class="limit-info">
-            <span class="limit-name">Memory Search Limit</span>
-            <span class="limit-desc">How many memories to retrieve (default: 10)</span>
-          </div>
-          <input
-            type="number"
-            min="1"
-            max="50"
-            [value]="rulesStore.rules()?.memorySearchLimit ?? ''"
-            (blur)="updateLimit('memorySearchLimit', $event)"
-            placeholder="Default: 10"
-            class="limit-input"
-          />
-        </div>
-
-        <div class="limit-item">
-          <div class="limit-info">
-            <span class="limit-name">Conversation History Limit</span>
-            <span class="limit-desc">How many previous messages to include (default: 10)</span>
-          </div>
-          <input
-            type="number"
-            min="1"
-            max="50"
-            [value]="rulesStore.rules()?.historyLimit ?? ''"
-            (blur)="updateLimit('historyLimit', $event)"
-            placeholder="Default: 10"
-            class="limit-input"
-          />
-        </div>
-
-        <div class="limit-item">
-          <div class="limit-info">
-            <span class="limit-name">File Upload Max Characters</span>
-            <span class="limit-desc"
-              >Maximum characters to extract from uploaded files (default: 50000)</span
-            >
-          </div>
-          <input
-            type="number"
-            min="1000"
-            max="500000"
-            step="1000"
-            [value]="rulesStore.rules()?.fileUploadMaxChars ?? ''"
-            (blur)="updateLimit('fileUploadMaxChars', $event)"
-            placeholder="Default: 50000"
-            class="limit-input"
-          />
-        </div>
+        <input
+          type="number"
+          min="1"
+          max="50"
+          [value]="rulesStore.rules()?.webSearchLimit ?? ''"
+          (blur)="updateLimit('webSearchLimit', $event)"
+          placeholder="10"
+          class="limit-input"
+        />
       </div>
 
-      <!-- Custom Instructions Section -->
-      <div class="rules-section">
-        <h3>Custom AI Instructions</h3>
-        <p class="section-description">
-          Add custom behavior rules or instructions for the AI in this session
-        </p>
-
-        <div class="instructions-container">
-          <div class="instructions-examples">
-            <p class="examples-label">Examples:</p>
-            <ul>
-              <li>Don't act as a teacher, be more conversational</li>
-              <li>Always cite sources with URLs</li>
-              <li>Respond in bullet points instead of paragraphs</li>
-              <li>Be more concise and technical</li>
-              <li>Use simple language, avoid jargon</li>
-            </ul>
-          </div>
-
-          <textarea
-            class="instructions-textarea"
-            [value]="rulesStore.rules()?.customInstructions ?? ''"
-            (blur)="updateCustomInstructions($event)"
-            placeholder="Enter custom instructions for this session...&#10;&#10;Examples:&#10;- Don't act as a teacher&#10;- Be more conversational&#10;- Provide code examples&#10;- Use bullet points"
-            rows="6"
-          ></textarea>
-
-          <p class="instructions-help">
-            These instructions will be added to the AI's system prompt for this session only. They
-            override the default behavior.
-          </p>
+      <div class="limit-item">
+        <div class="limit-info">
+          <span class="limit-name">Memory Search Limit</span>
+          <span class="limit-desc">How many memories to retrieve</span>
         </div>
+        <input
+          type="number"
+          min="1"
+          max="50"
+          [value]="rulesStore.rules()?.memorySearchLimit ?? ''"
+          (blur)="updateLimit('memorySearchLimit', $event)"
+          placeholder="10"
+          class="limit-input"
+        />
+      </div>
+
+      <div class="limit-item">
+        <div class="limit-info">
+          <span class="limit-name">Conversation History Limit</span>
+          <span class="limit-desc">How many previous messages to include</span>
+        </div>
+        <input
+          type="number"
+          min="1"
+          max="50"
+          [value]="rulesStore.rules()?.historyLimit ?? ''"
+          (blur)="updateLimit('historyLimit', $event)"
+          placeholder="10"
+          class="limit-input"
+        />
+      </div>
+
+      <div class="limit-item bottom">
+        <div class="limit-info">
+          <span class="limit-name">File Upload Max Characters</span>
+          <span class="limit-desc"
+            >Maximum characters to extract from uploaded files</span
+          >
+        </div>
+        <input
+          type="number"
+          min="1000"
+          max="500000"
+          step="1000"
+          [value]="rulesStore.rules()?.fileUploadMaxChars ?? ''"
+          (blur)="updateLimit('fileUploadMaxChars', $event)"
+          placeholder="50000"
+          class="limit-input"
+        />
+      </div>
+    </div>
+
+    <!-- Custom Instructions Section -->
+    <div class="rules-section lite-yellow">
+      <h3>Custom AI Instructions</h3>
+      <p class="section-description">
+        Add custom behavior rules or instruction
+      </p>
+
+      <div class="instructions-container">
+        <textarea
+          class="instructions-textarea"
+          [value]="rulesStore.rules()?.customInstructions ?? ''"
+          (blur)="updateCustomInstructions($event)"
+          placeholder="Enter custom instructions for this session...&#10;&#10;Examples:&#10;- Don't act as a teacher&#10;- Be more conversational&#10;- Provide code examples&#10;- Use bullet points"
+          rows="6"
+        ></textarea>
       </div>
     </div>
   </div>

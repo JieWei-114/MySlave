@@ -37,7 +37,7 @@ export class ChatStore {
     console.error(...args);
   }
 
-  /** 
+  /**
    * State Signals
    */
 
@@ -59,6 +59,7 @@ export class ChatStore {
 
   // Draft message being typed by the user
   readonly draftMessage = signal('');
+  private readonly draftBySession = signal<Record<string, string>>({});
 
   // Metadata from last AI response
   readonly lastMessageMetadata = signal<MessageMetadata | null>(null);
@@ -73,9 +74,6 @@ export class ChatStore {
   // Feature availability flags
   readonly hasMemory = signal<boolean>(false);
   readonly hasFile = signal<boolean>(false);
-
-  // UI visibility toggles
-  readonly showMetadata = signal<boolean>(true);
 
   /**
    * Computed Signals
@@ -97,23 +95,15 @@ export class ChatStore {
     return session?.rules?.followUpEnabled ?? false;
   });
 
+  // Get reasoning status from current session's rules (default: false)
+  readonly reasoningEnabled = computed(() => {
+    const session = this.currentSession();
+    return session?.rules?.reasoningEnabled ?? false;
+  });
+
   // Messages in the current session
   readonly messageList = computed<ChatMessage[]>(() => this.currentSession()?.messages ?? []);
   readonly hasMessages = computed(() => this.messageList().length > 0);
-
-  // Metadata from the last assistant message in the current session (session-specific)
-  readonly currentSessionMetadata = computed<MessageMetadata | null>(() => {
-    const messages = this.messageList();
-    if (!messages || messages.length === 0) return null;
-
-    // Find the last assistant message in this session
-    for (let i = messages.length - 1; i >= 0; i--) {
-      if (messages[i].role === 'assistant' && messages[i].meta) {
-        return messages[i].meta ?? null;
-      }
-    }
-    return null;
-  });
 
   // Empty state check for showing welcome screen
   readonly isEmpty = computed(() => !this.hasMessages() && !this.loading());
@@ -142,6 +132,12 @@ export class ChatStore {
   // Update the draft message
   setDraftMessage(message: string): void {
     this.draftMessage.set(message);
+    const sessionId = this.currentSessionId();
+    if (!sessionId) return;
+    this.draftBySession.update((drafts: Record<string, string>) => ({
+      ...drafts,
+      [sessionId]: message,
+    }));
   }
 
   /**
@@ -150,24 +146,59 @@ export class ChatStore {
   appendToDraft(message: string): void {
     const current = this.draftMessage();
     const separator = current.trim().length ? '\n' : '';
-    this.draftMessage.set(`${current}${separator}${message}`);
+    this.setDraftMessage(`${current}${separator}${message}`);
   }
 
   /**
    * Clear draft after sending message
    */
   clearDraft(): void {
-    this.draftMessage.set('');
+    this.setDraftMessage('');
   }
 
   /**
    * Model Selection
    */
 
-
   // Set the active AI model (e.g., Gemma, Qwen)
   setModel(model: AIModel): void {
     this.currentModel.set(model);
+    // Save model choice to localStorage for this session
+    const sessionId = this.currentSessionId();
+    if (sessionId) {
+      this.saveModelToLocalStorage(sessionId, model);
+    }
+  }
+
+  /**
+   * Save model selection to localStorage with session-specific key
+   */
+  private saveModelToLocalStorage(sessionId: string, model: AIModel): void {
+    if (!this.isBrowser) return;
+    try {
+      localStorage.setItem(`chat_model_${sessionId}`, JSON.stringify(model));
+      this.log(`Model saved to localStorage for session ${sessionId}`);
+    } catch (e) {
+      this.logError(`Failed to save model to localStorage: ${e}`);
+    }
+  }
+
+  /**
+   * Load model selection from localStorage for a specific session
+   */
+  private loadModelFromLocalStorage(sessionId: string): AIModel | null {
+    if (!this.isBrowser) return null;
+    try {
+      const stored = localStorage.getItem(`chat_model_${sessionId}`);
+      if (stored) {
+        const model = JSON.parse(stored) as AIModel;
+        this.log(`Model loaded from localStorage for session ${sessionId}`);
+        return model;
+      }
+    } catch (e) {
+      this.logError(`Failed to load model from localStorage: ${e}`);
+    }
+    return null;
   }
 
   /**
@@ -237,17 +268,72 @@ export class ChatStore {
   }
 
   /**
+   * Toggle reasoning generation for the current session.
+   * Updates session-specific rules in backend
+   */
+  toggleReasoning(): void {
+    const session = this.currentSession();
+    if (!session) return;
+
+    const currentValue = session.rules?.reasoningEnabled ?? false;
+    const newValue = !currentValue;
+
+    // Optimistically update local state
+    this.sessions.update((sessions: Record<string, ChatSession>) => ({
+      ...sessions,
+      [session.id]: {
+        ...session,
+        rules: {
+          ...DEFAULT_RULES,
+          ...session.rules,
+          reasoningEnabled: newValue,
+        },
+      },
+    }));
+
+    // Persist to backend
+    const updatedRules: RulesConfig = {
+      ...DEFAULT_RULES,
+      ...session.rules,
+      reasoningEnabled: newValue,
+    };
+
+    this.rulesApi.updateSessionRules(session.id, updatedRules).subscribe({
+      next: (rules: RulesConfig) => {
+        this.log(`Reasoning toggled to ${newValue} for session ${session.id}`);
+        // Update with response from server to ensure consistency
+        this.sessions.update((sessions: Record<string, ChatSession>) => ({
+          ...sessions,
+          [session.id]: {
+            ...session,
+            rules: rules,
+          },
+        }));
+      },
+      error: (err: any) => {
+        this.logError(`Failed to update reasoning setting: ${err}`);
+        // Revert optimistic update on error
+        this.sessions.update((sessions: Record<string, ChatSession>) => ({
+          ...sessions,
+          [session.id]: {
+            ...session,
+            rules: {
+              ...DEFAULT_RULES,
+              ...session.rules,
+              reasoningEnabled: currentValue,
+            },
+          },
+        }));
+        this.error.set('Failed to update reasoning setting');
+      },
+    });
+  }
+
+  /**
    * Store metadata from the last AI response
    */
   setLastMessageMetadata(metadata: MessageMetadata): void {
     this.lastMessageMetadata.set(metadata);
-  }
-
-  /**
-   * Toggle visibility of the metadata indicator panel
-   */
-  toggleMetadata(): void {
-    this.showMetadata.update((v: boolean) => !v);
   }
 
   /**
@@ -317,8 +403,29 @@ export class ChatStore {
    */
   selectSession(id: string): void {
     this.log(`Selecting session: ${id}`);
+    const previousId = this.currentSessionId();
+    if (previousId && previousId !== id) {
+      const currentDraft = this.draftMessage();
+      this.draftBySession.update((drafts: Record<string, string>) => ({
+        ...drafts,
+        [previousId]: currentDraft,
+      }));
+    }
+
     this.currentSessionId.set(id);
     this.error.set('');
+
+    const nextDraft = this.draftBySession()[id] ?? '';
+    this.draftMessage.set(nextDraft);
+
+    // Load model for this session from localStorage
+    const savedModel = this.loadModelFromLocalStorage(id);
+    if (savedModel) {
+      this.currentModel.set(savedModel);
+    } else {
+      // Fall back to default model if none saved
+      this.currentModel.set(DEFAULT_MODEL);
+    }
 
     const session = this.sessions()[id];
 
@@ -373,6 +480,7 @@ export class ChatStore {
     }));
 
     this.currentSessionId.set(id);
+    this.draftMessage.set(this.draftBySession()[id] ?? '');
   }
 
   /**
@@ -391,11 +499,17 @@ export class ChatStore {
           delete copy[sessionId];
           return copy;
         });
+        this.draftBySession.update((drafts: Record<string, string>) => {
+          const copy = { ...drafts };
+          delete copy[sessionId];
+          return copy;
+        });
 
         // Select another session if deleted one was active
         if (wasActive) {
           const next = this.sessionIds()[0] ?? null;
           this.currentSessionId.set(next);
+          this.draftMessage.set(next ? (this.draftBySession()[next] ?? '') : '');
         }
       },
       error: (err: unknown) => {
@@ -546,6 +660,7 @@ export class ChatStore {
                 meta: {
                   ...(msgs[assistantIndex].meta ?? {}),
                   reasoning: currentReasoning + reasoning,
+                  reasoning_streaming: true,
                 },
               };
 
@@ -563,6 +678,18 @@ export class ChatStore {
             this.loading.set(false);
             this.stopStreaming = null;
             this.messageRetryCount = 0;
+
+            this.sessions.update((s: Record<string, ChatSession>) => {
+              const msgs = [...s[sessionId].messages];
+              msgs[assistantIndex] = {
+                ...msgs[assistantIndex],
+                meta: {
+                  ...(msgs[assistantIndex].meta ?? {}),
+                  reasoning_streaming: false,
+                },
+              };
+              return { ...s, [sessionId]: { ...s[sessionId], messages: msgs } };
+            });
 
             this.memoryStore.reload(sessionId);
           },
@@ -604,6 +731,7 @@ export class ChatStore {
                 break;
             }
           },
+          this.reasoningEnabled(),
         );
       };
 

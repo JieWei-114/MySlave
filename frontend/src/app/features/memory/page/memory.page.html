@@ -1,8 +1,8 @@
 <div class="memory-panel">
+  <div class="memory-actions">
+    <input type="text" placeholder="Search memory..." (input)="onSearch($event.target.value)" />
+  </div>
   <div class="memory-list">
-    <div class="memory-actions">
-      <input type="text" placeholder="Search memory..." (input)="onSearch($event.target.value)" />
-    </div>
     <div class="memory-item" *ngFor="let m of store.memories()" [class.disabled]="!m.enabled">
       <label class="memory-checkbox">
         <input type="checkbox" [checked]="m.enabled" (change)="store.toggle(m)" />
@@ -12,6 +12,7 @@
       <div class="memory-content">
         {{ m.content }}
         <span class="tag" *ngIf="m.source === 'auto'">Auto</span>
+        <span class="tag" *ngIf="m.source === 'manual'">Manual</span>
         <span class="tag" *ngIf="m.source === 'compress'">Compress</span>
         <span class="tag" *ngIf="m.category === 'preference_or_fact'">Preference/Fact</span>
         <span class="tag" *ngIf="m.category === 'important'">Important</span>
@@ -28,24 +29,44 @@
   </div>
 
   <div class="memory-add-wrapper">
+    <button
+      class="btn-compress"
+      (click)="compress()"
+      [disabled]="store.compressing()"
+      title="Compress enabled memories"
+    >
+      <span *ngIf="!store.compressing()">Compress</span>
+      <span *ngIf="store.compressing()">...</span>
+    </button>
     <div class="memory-add">
-      <select [(ngModel)]="newCategory" class="memory-category">
-        <option value="preference_or_fact">Preference/Fact</option>
-        <option value="important">Important</option>
-        <option value="other">Other</option>
-      </select>
-      <textarea
-        appAutoResize
-        [(ngModel)]="newMemory"
-        placeholder="Type something to remember..."
-        rows="1"
-      ></textarea>
-      <div class="memory-button">
-        <app-button (click)="add()" [disabled]="!newMemory.trim()">Add</app-button>
-        <app-button class="btn-compress" (click)="compress()" [disabled]="store.compressing()">
-          <span *ngIf="!store.compressing()">Compress</span>
-          <span *ngIf="store.compressing()">...</span>
-        </app-button>
+      <div class="memory-add-textarea">
+        <textarea
+          appAutoResize
+          [(ngModel)]="newMemory"
+          placeholder="Type something to remember..."
+          rows="1"
+        ></textarea>
+      </div>
+      <div class="memory-button-wrapper">
+        <div class="custom-select-container">
+          <div class="selected-value" (click)="toggleCategoryDropdown($event)">
+            {{ getCurrentCategoryLabel() }}
+            <span class="arrow" [class.open]="isCategoryDropdownOpen">▼</span>
+          </div>
+
+          <div class="custom-options-wrapper" *ngIf="isCategoryDropdownOpen">
+            <div
+              class="custom-option"
+              *ngFor="let option of categoryOptions"
+              (click)="selectCategory(option.value)"
+            >
+              {{ option.label }}
+            </div>
+          </div>
+        </div>
+        <div>
+          <button class="memory-button" (click)="add()" [disabled]="!newMemory.trim()">Add</button>
+        </div>
       </div>
     </div>
   </div>

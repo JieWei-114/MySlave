@@ -81,11 +81,13 @@ export class ChatApi {
     onDone: () => void,
     onMetadata?: (meta: any) => void,
     onVerification?: (status: { type: string; data?: any }) => void,
+    reasoningEnabled: boolean = false,
   ): () => void {
     let url =
       `${this.config.apiBaseUrl}/chat/${sessionId}/stream` +
       `?content=${encodeURIComponent(content)}` +
-      `&model=${encodeURIComponent(model)}`;
+      `&model=${encodeURIComponent(model)}` +
+      `&reasoning=${reasoningEnabled}`;
 
     const es = new EventSource(url);
 

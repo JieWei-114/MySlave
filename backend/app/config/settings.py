@@ -8,16 +8,16 @@ class Settings(BaseSettings):
     """Application configuration loaded from environment variables"""
 
     # DATABASE SETTINGS
-    MONGO_URI: str = None
-    DB_NAME: str = None
+    MONGO_URI: Optional[str] = None
+    DB_NAME: Optional[str] = None
 
     # MongoDB connection pool settings
-    MONGO_MAX_POOL_SIZE: int = None
-    MONGO_MIN_POOL_SIZE: int = None
-    MONGO_SERVER_SELECTION_TIMEOUT_MS: int = None
+    MONGO_MAX_POOL_SIZE: int | None = None
+    MONGO_MIN_POOL_SIZE: int | None = None
+    MONGO_SERVER_SELECTION_TIMEOUT_MS: int | None = None
 
     # LLM SETTINGS (Ollama)
-    OLLAMA_URL: str = None
+    OLLAMA_URL: Optional[str] = None
     OLLAMA_TIMEOUT: Optional[int] = None
 
     # CORS SETTINGS
@@ -133,7 +133,7 @@ class Settings(BaseSettings):
     SERPER_URL: str | None = None
     SERPER_API_KEY: str | None = None
     SERPER_LIMIT: int | None = None  # Results per search
-    SERPER_TOTAL_LIMIT: int = None  # Monthly API quota
+    SERPER_TOTAL_LIMIT: int | None = None  # Monthly API quota
     SERPER_TIMEOUT: float = 20.0
 
     # Tavily - Research API (paid, quota-limited)
@@ -141,7 +141,7 @@ class Settings(BaseSettings):
     TAVILY_API_KEY: Optional[str] = None
     TAVILY_LIMIT: int | None = None  # Results per search
     TAVILY_TIMEOUT: float = 20.0
-    TAVILY_MONTHLY_LIMIT: int = None  # Monthly API quota
+    TAVILY_MONTHLY_LIMIT: int | None = None  # Monthly API quota
 
     # WEB EXTRACTION SETTINGS
     LOCAL_EXTRACT_MAX_CHARS: int = 20000
@@ -154,9 +154,9 @@ class Settings(BaseSettings):
     # ============================================================
     # MEMORY AUTO-SAVE SETTINGS
     # ============================================================
-    MEMORY_MAX_CONTENT_LENGTH: int = None  # Max chars per memory entry
-    MEMORY_MIN_ASSISTANT_LENGTH: int = None  # Min chars in assistant response to remember
-    MEMORY_MIN_CONVERSATION_LENGTH: int = None  # Min combined user+assistant length to remember
+    MEMORY_MAX_CONTENT_LENGTH: int | None = None  # Max chars per memory entry
+    MEMORY_MIN_ASSISTANT_LENGTH: int | None = None  # Min chars in assistant response to remember
+    MEMORY_MIN_CONVERSATION_LENGTH: int | None = None  # Min combined user+assistant length to remember
 
     # Memory function defaults
     MEMORY_DEFAULT_CONFIDENCE: float = 0.95  # Default confidence for new memories
@@ -305,8 +305,11 @@ Follow-up mode: background only.
 - Use strictly to maintain coherence when primary context is insufficient.
 - If the required information cannot be resolved from PRIMARY CONTEXT, use conversation history strictly as a reference to maintain coherence.
 
-4. MEMORY (Preferences & Confirmed Facts Only)
-- Used for long-term consistency.
+4. MEMORY (Categorized Long-Term Knowledge)
+- Memory entries are categorized as: preference/fact, important, other.
+- important memories MUST be read every time and treated as high-priority context.
+- preference and fact memories should be used for long-term consistency and personalization.
+- other memories are optional and should only be used if clearly relevant.
 Does not contain:
 - temporary context (use history)
 - real-time information (use web)

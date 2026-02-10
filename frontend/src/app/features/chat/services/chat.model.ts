@@ -39,6 +39,7 @@ export interface MessageMetadata {
 
   // Validation metadata
   reasoning?: string; // Raw LLM-generated reasoning explanation
+  reasoning_streaming?: boolean; // UI-only flag while reasoning tokens stream
   reasoning_chain?: ReasoningChainSummary; // Structured reasoning steps
   reasoning_veto?: {
     level: string; // 'hard', 'soft', or 'none'

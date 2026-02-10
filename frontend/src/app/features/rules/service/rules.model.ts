@@ -24,6 +24,9 @@ export interface RulesConfig {
 
   // Follow-up context (default: false)
   followUpEnabled?: boolean;
+
+  // Reasoning generation (default: false)
+  reasoningEnabled?: boolean;
 }
 
 export const DEFAULT_RULES: RulesConfig = {
@@ -46,6 +49,9 @@ export const DEFAULT_RULES: RulesConfig = {
 
   // Follow-up context (disabled by default)
   followUpEnabled: false,
+
+  // Reasoning generation (disabled by default)
+  reasoningEnabled: false,
 };
 
 // Helper function to validate rules

@@ -29,6 +29,7 @@
 }
 
 .bubble.assistant {
+  background: var(--primary-second);
   color: white;
   margin-right: auto;
   border-bottom-left-radius: var(--radius-sm);
@@ -40,8 +41,6 @@
 
 .reasoning-section {
   margin-bottom: 12px;
-  border-left: 3px solid rgba(74, 144, 226, 0.6);
-  padding-left: 12px;
 }
 
 .reasoning-toggle {
@@ -60,7 +59,7 @@
 }
 
 .reasoning-toggle:hover {
-  color: rgba(74, 144, 226, 0.9);
+  color: var(--primary-lite);
 }
 
 .reasoning-icon {
@@ -78,22 +77,22 @@
 
 .reasoning-confidence {
   margin-left: auto;
-  color: rgba(74, 144, 226, 0.8);
   font-weight: 600;
 }
 
 .reasoning-content {
   margin-top: 8px;
   padding: 10px;
-  background: rgba(74, 144, 226, 0.1);
+  background: var(--gray-500);
   border-radius: var(--radius-md);
   font-size: 13px;
   line-height: 1.5;
-  color: rgba(255, 255, 255, 0.85);
+  color: rgb(0, 0, 0);
 }
 
 .main-content {
   margin-top: 8px;
+  padding-bottom: 10px;
 }
 
 .attachment {
@@ -117,12 +116,13 @@
 }
 
 .remember,
-.edit {
+.edit,
+.metadata {
   font-size: 12px;
   padding: 4px 8px;
   margin: 5px;
   border-radius: var(--radius-md);
-  background: rgba(187, 187, 187, 0.9);
+  background: var(--gray-500);
   cursor: pointer;
   opacity: 0;
   transition: all var(--transition-base);
@@ -131,24 +131,29 @@
 }
 
 .bubble:hover .remember,
-.bubble:hover .edit {
+.bubble:hover .edit,
+.bubble:hover .metadata {
   opacity: 1;
 }
 
 .remember:hover,
-.edit:hover {
-  background: white;
+.edit:hover,
+.metadata:hover {
+  background: var(--gray-600);
   box-shadow: var(--shadow-mg);
   transform: scale(1.05);
 }
 
 .edit {
-  background: rgba(74, 144, 226, 0.9);
+  padding: 0px 25px;
+  background: var(--primary-light);
   color: white;
 }
 
 .edit:hover {
-  background: rgba(74, 144, 226, 1);
+  background: var(--primary-dark);
+  box-shadow: var(--shadow-mg);
+  transform: scale(1.05);
 }
 
 .bubble.editing {
@@ -165,14 +170,12 @@
 
 .edit-textarea {
   width: 100%;
-  min-height: 80px;
-  max-height: 60vh;
+  min-height: 60px;
+  max-height: 40vh;
   padding: 10px;
-  border-radius: var(--radius-md);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-md);    
   background: rgba(255, 255, 255, 0.05);
   color: white;
-  font-family: inherit;
   font-size: 14px;
   resize: none;
   outline: none;
@@ -180,13 +183,11 @@
 }
 
 .edit-textarea:focus {
-  border-color: rgba(74, 144, 226, 0.8);
   background: rgba(255, 255, 255, 0.08);
 }
 
 .edit-actions {
   display: flex;
-  gap: 8px;
   justify-content: flex-end;
 }
 
@@ -201,21 +202,21 @@
 }
 
 .btn-cancel {
-  background: rgba(187, 187, 187, 0.3);
+  background: var(--primary-light);
   color: white;
 }
 
 .btn-cancel:hover {
-  background: rgba(187, 187, 187, 0.5);
+  background: var(--primary-lite);
 }
 
 .btn-resend {
-  background: rgba(74, 144, 226, 0.9);
+  background: var(--primary-light);
   color: white;
 }
 
 .btn-resend:hover:not(:disabled) {
-  background: rgba(74, 144, 226, 1);
+  background: var(--primary-lite);
   transform: scale(1.05);
 }
 

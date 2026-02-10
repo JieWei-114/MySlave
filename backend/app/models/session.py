@@ -13,6 +13,8 @@ class SessionRules(BaseModel):
     serper: bool = False
     tavilyExtract: bool = False
     localExtract: bool = True
+    followUpEnabled: bool = False
+    reasoningEnabled: bool = False
 
 
 class ChatSession(BaseModel):
@@ -30,8 +32,14 @@ class AssistantMeta(BaseModel):
     tools_used: list[str] | None = None
 
 
+class MessageAttachment(BaseModel):
+    filename: str
+    content: str
+
+
 class ChatMessage(BaseModel):
     role: str
     content: str
     created_at: datetime = Field(default_factory=datetime.utcnow)
     meta: AssistantMeta | None = None
+    attachment: MessageAttachment | None = None

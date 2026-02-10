@@ -1,20 +1,34 @@
 <div class="files-panel">
   <div class="files-header">
-    <div>
-      <h3>Files</h3>
-      <p>Attach files to this session</p>
-    </div>
-  </div>
+    <div class="files-header-wrapper">
+      <div>
+        <h3>Files</h3>
+        <p>Attach files to this session</p>
+      </div>
+      <div class="files-actions">
+        <input
+          #fileInput
+          class="file-input"
+          type="file"
+          accept=".txt,.md,.json,.csv,.log,.html,.css,.ts,.js,.py,.yaml,.yml,.pdf,.doc,.docx,text/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          (change)="onFileSelected($event)"
+          [disabled]="fileStore.uploading()"
+        />
 
-  <div class="files-actions">
-    <input
-      class="file-input"
-      type="file"
-      (change)="onFileSelected($event)"
-      [disabled]="fileStore.uploading()"
-    />
-    <span class="status" *ngIf="fileStore.uploading()">Uploading...</span>
-    <span class="error" *ngIf="fileError()">{{ fileError() }}</span>
+        <app-button
+          *ngIf="true"
+          class="btn-upload"
+          title="Upload file"
+          (click)="fileInput.click()"
+          [disabled]="fileStore.uploading()"
+        >
+          +
+        </app-button>
+
+        <span class="status" *ngIf="fileStore.uploading()">Uploading...</span>
+        <span class="error" *ngIf="fileError()">{{ fileError() }}</span>
+      </div>
+    </div>
   </div>
 
   <div class="files-list" *ngIf="fileStore.files().length; else empty">
@@ -23,7 +37,7 @@
         <div class="file-name">{{ f.filename }}</div>
         <div class="file-meta">{{ f.file_type }} • {{ f.size_chars }} chars</div>
       </div>
-      <app-button class="btn-delete" (click)="deleteFile(f.id)">🗑</app-button>
+      <button class="btn-delete" (click)="deleteFile(f.id)">🗑</button>
     </div>
   </div>
 

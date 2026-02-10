@@ -130,7 +130,7 @@ export class RulesPanelComponent implements OnInit {
   resetToDefaults(): void {
     if (
       confirm(
-        'Reset all rules to default values? This will enable free providers and disable paid ones.',
+        'Reset all rules to default values?',
       )
     ) {
       this.rulesStore.resetToDefaults();

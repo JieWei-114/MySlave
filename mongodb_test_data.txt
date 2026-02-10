@@ -1,0 +1,95 @@
+// MongoDB test data insertion script
+// Copy and paste this into MongoDB 
+
+{
+  "id": "test-session-001",
+  "title": "Test Session",
+  "created_at": null,
+  "updated_at": null,
+  "rules": {
+    "searxng": true,
+    "duckduckgo": true,
+    "tavily": false,
+    "serper": false,
+    "tavilyExtract": false,
+    "localExtract": true,
+    "followUpEnabled": false,
+    "reasoningEnabled": true
+  },
+  "messages": [
+    {
+      "role": "user",
+      "content": "What is the height of the Eiffel Tower?",
+      "created_at": null
+    },
+    {
+      "role": "assistant",
+      "content": "The Eiffel Tower is approximately 330 meters tall, though measurements vary slightly depending on whether you include antennas.",
+      "created_at": null,
+      "meta": {
+        "source_used": "combined",
+        "sources_used": ["file", "web"],
+        "supplemented_with": ["file", "web"],
+        "sources_considered": {
+          "file": 0.78,
+          "memory": 0.0,
+          "web": 0.95,
+          "history": 0.60
+        },
+        "source_relevance": {
+          "file": 0.78,
+          "web": 0.95,
+          "history": 0.60
+        },
+        "loaded_sources": {
+          "file": {"available": true, "count": 1},
+          "memory": {"available": false},
+          "web": {"available": true, "count": 3},
+          "history": {"available": true}
+        },
+        "has_factual_content": true,
+        "confidence_initial": 0.91,
+        "confidence_final": 0.85,
+        "reasoning": "Found information from uploaded file and web search. File mentions 320m, web sources say 330m.",
+        "reasoning_chain": {
+          "steps_count": 3,
+          "sources_used": ["file", "web"],
+          "final_confidence": 0.85,
+          "duration_ms": 1200,
+          "step_details": [
+            {"step": 1, "action": "EXTRACT_FILE", "source": "file", "confidence": 0.78},
+            {"step": 2, "action": "SEARCH_WEB", "source": "web", "confidence": 0.95},
+            {"step": 3, "action": "COMPARE_SOURCES", "source": "combined", "confidence": 0.85}
+          ]
+        },
+        "reasoning_veto": {
+          "level": "soft",
+          "signals": ["conflicting_measurements"],
+          "confidence_cap": 0.90,
+          "reason": "Measurement discrepancy detected between sources",
+          "should_refuse": false,
+          "refusal_message": ""
+        },
+        "factual_guard": {
+          "risk": "MED",
+          "cap": 0.88,
+          "unverified_entities": []
+        },
+        "source_conflicts": [
+          {
+            "sources": ["file", "web"],
+            "reason": "File states Eiffel Tower height is 320m (older measurement), web sources consistently report 330m (current standard)",
+            "confidence_reduction": 0.06
+          }
+        ],
+        "uncertainty_flags": [
+          {
+            "aspect": "Exact tower height",
+            "confidence": 0.82,
+            "suggested_actions": ["verify_source", "search_web"]
+          }
+        ]
+      }
+    }
+  ]
+}

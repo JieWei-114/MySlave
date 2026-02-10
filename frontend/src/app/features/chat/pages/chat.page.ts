@@ -30,7 +30,6 @@ import { SkeletonComponent } from '../../../shared/ui/skeleton/skeleton.componen
 import { ErrorBoundaryComponent } from '../../../shared/ui/error-boundary/error-boundary.component';
 import { AppConfigService } from '../../../core/services/app-config.services';
 import { AutoResizeTextareaDirective } from '../../../shared/directives/auto-resize-textarea.directive';
-import { ContextIndicatorComponent } from '../../../shared/ui/context-indicator/context-indicator.component';
 
 @Component({
   selector: 'app-chat-page',
@@ -46,7 +45,6 @@ import { ContextIndicatorComponent } from '../../../shared/ui/context-indicator/
     SkeletonComponent,
     ErrorBoundaryComponent,
     AutoResizeTextareaDirective,
-    ContextIndicatorComponent,
     // PrefixPipe
   ],
   templateUrl: './chat.page.html',
@@ -64,7 +62,9 @@ export class ChatPage implements OnInit, AfterViewInit {
   isErrorDismissed = signal(false);
   selectedFileName = signal('');
   fileError = signal('');
+  isFileUploading = signal(false);
   private fileContent = signal('');
+  private pendingFile: File | null = null;
 
   get message(): string {
     return this.store.draftMessage();
@@ -144,10 +144,43 @@ export class ChatPage implements OnInit, AfterViewInit {
    */
   send(): void {
     this.isErrorDismissed.set(false);
-    let content = this.store.draftMessage().trim();
+    const content = this.store.draftMessage().trim();
 
     if (!content) return;
 
+    if (this.isFileUploading()) {
+      this.fileError.set('Please wait for file extraction to finish.');
+      return;
+    }
+
+    if (this.pendingFile && !this.fileContent()) {
+      this.isFileUploading.set(true);
+      this.fileError.set('Extracting content...');
+      const fileToUpload = this.pendingFile;
+      this.uploadFileToBackend(fileToUpload).subscribe({
+        next: (response: { content: string; filename: string }) => {
+          this.selectedFileName.set(response.filename);
+          this.fileContent.set(response.content);
+          this.fileError.set('');
+          this.isFileUploading.set(false);
+          this.pendingFile = null;
+          this.performSend(content);
+        },
+        error: (err: any) => {
+          this.fileError.set(err.error?.detail || 'Failed to extract file content.');
+          this.selectedFileName.set('');
+          this.fileContent.set('');
+          this.isFileUploading.set(false);
+          this.pendingFile = null;
+        },
+      });
+      return;
+    }
+
+    this.performSend(content);
+  }
+
+  private performSend(content: string): void {
     // Attach file content if selected
     const attachment = this.fileContent()
       ? { filename: this.selectedFileName(), content: this.fileContent() }
@@ -160,6 +193,7 @@ export class ChatPage implements OnInit, AfterViewInit {
     this.selectedFileName.set('');
     this.fileContent.set('');
     this.fileError.set('');
+    this.pendingFile = null;
   }
 
   /**
@@ -224,9 +258,15 @@ export class ChatPage implements OnInit, AfterViewInit {
       file.name.toLowerCase().endsWith(ext),
     );
 
+    this.isFileUploading.set(true);
+
     if (isBinary) {
-      // Upload binary file (PDF, Word, etc.) to backend for extraction
-      this.uploadFileToBackend(file);
+      // Defer binary file upload until Send
+      this.pendingFile = file;
+      this.selectedFileName.set(file.name);
+      this.fileContent.set('');
+      this.fileError.set('File ready. Click Send to upload and include it.');
+      this.isFileUploading.set(false);
       input.value = '';
     } else {
       // Read text files directly in browser
@@ -236,17 +276,20 @@ export class ChatPage implements OnInit, AfterViewInit {
         const content = raw.trim();
         if (!content) {
           this.fileError.set('File is empty or unreadable.');
+          this.isFileUploading.set(false);
           input.value = '';
           return;
         }
 
         this.selectedFileName.set(file.name);
         this.fileContent.set(content);
+        this.isFileUploading.set(false);
         input.value = '';
       };
 
       reader.onerror = () => {
         this.fileError.set('Failed to read file.');
+        this.isFileUploading.set(false);
         input.value = '';
       };
 
@@ -258,29 +301,14 @@ export class ChatPage implements OnInit, AfterViewInit {
    * Upload binary file to backend for text extraction
    * Backend handles PDF, Word, and other complex formats
    */
-  private uploadFileToBackend(file: File): void {
+  private uploadFileToBackend(file: File) {
     const formData = new FormData();
     formData.append('file', file);
 
-    this.fileError.set('Extracting content...');
-
-    this.http
-      .post<{
-        content: string;
-        filename: string;
-      }>(`${this.config.apiBaseUrl}/chat/upload`, formData)
-      .subscribe({
-        next: (response: { content: string; filename: string }) => {
-          this.selectedFileName.set(response.filename);
-          this.fileContent.set(response.content);
-          this.fileError.set('');
-        },
-        error: (err: any) => {
-          this.fileError.set(err.error?.detail || 'Failed to extract file content.');
-          this.selectedFileName.set('');
-          this.fileContent.set('');
-        },
-      });
+    return this.http.post<{
+      content: string;
+      filename: string;
+    }>(`${this.config.apiBaseUrl}/chat/upload`, formData);
   }
 
   retryLoadSessions(): void {
@@ -311,6 +339,8 @@ export class ChatPage implements OnInit, AfterViewInit {
     this.selectedFileName.set('');
     this.fileContent.set('');
     this.fileError.set('');
+    this.isFileUploading.set(false);
+    this.pendingFile = null;
   }
 
   isLastUserMessage(msg: any, index: number): boolean {

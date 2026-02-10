@@ -19,6 +19,7 @@ from app.services.memory_service import (
     auto_memory_if_needed,
     search_memories,
     add_synthesized_memory,
+    list_memories_by_category,
 )
 from app.services.file_extraction_service import (
     get_file_attachment,
@@ -31,6 +32,7 @@ from app.services.entity_validation_service import (
     assess_factual_guard,
     detect_uncertainty,
 )
+from app.services.reasoning_veto_service import assess_reasoning_veto
 from app.services.chat_session_service import get_session_rules, get_session
 from app.services.context_builder_service import (
     extract_key_points,
@@ -640,18 +642,41 @@ Size: {len(content)} characters
 async def _build_memory_context(session_id: str, query: str, limits: dict) -> dict:
     """Build context from semantic memories."""
     try:
+        important_memories = list_memories_by_category(session_id, 'important')
         memories = search_memories(
             chat_sessionId=session_id,
             query=query,
             limit=limits.get('memory_items', MEMORY_RESULTS_LIMIT),
         )
-        
-        if not memories:
+
+        combined = []
+        seen_ids = set()
+
+        for m in important_memories:
+            mem_id = m.get('id') or m.get('_id')
+            if mem_id in seen_ids:
+                continue
+            seen_ids.add(mem_id)
+            combined.append(m)
+
+        for m in memories:
+            mem_id = m.get('id') or m.get('_id')
+            if mem_id in seen_ids:
+                continue
+            seen_ids.add(mem_id)
+            combined.append(m)
+
+        if not combined:
             return {'content': '', 'confidence': 0.3, 'source': ContextSource.MEMORY, 'metadata': {'items_count': 0}, 'warning': 'No memories found'}
         
         lines = []
-        for m in memories:
-            lines.append(f"[{m.get('source', 'manual').upper()}] {m.get('content', '')}")
+        for m in combined:
+            category = (m.get('category') or 'other').upper()
+            source = (m.get('source') or 'manual').upper()
+            content = m.get('content') or m.get('value') or m.get('fact') or ''
+            if not content:
+                continue
+            lines.append(f"[MEMORY: {category} | {source}] {content}")
         
         if not lines:
             return {'content': '', 'confidence': 0.3, 'source': ContextSource.MEMORY, 'metadata': {'items_count': 0}, 'warning': 'Empty memories'}
@@ -662,7 +687,7 @@ async def _build_memory_context(session_id: str, query: str, limits: dict) -> di
             'content': formatted,
             'confidence': CONFIDENCE_MEMORY,
             'source': ContextSource.MEMORY,
-            'metadata': {'items_count': len(lines)},
+            'metadata': {'items_count': len(lines), 'important_count': len(important_memories)},
             'warning': None
         }
     except Exception as e:
@@ -810,6 +835,8 @@ def _build_reasoning_prompt(
     confidence: float,
     unverified_count: int,
     guard_eval: dict,
+    is_follow_up: bool = False,
+    primary_answer: str = None,
 ) -> str:
     """
     Build a prompt asking the model to explain its reasoning process.
@@ -832,6 +859,8 @@ def _build_reasoning_prompt(
         source_summary.append("- HISTORY: Conversation context")
     if 'url-extract' in sources_used:
         source_summary.append("- URL: Extracted content")
+    if is_follow_up and primary_answer:
+        source_summary.append(f"- FOLLOW-UP MODE HAS BEEN APPLIED: Previous answer available as primary context ({len(primary_answer)} chars)")
     
     sources_text = '\n'.join(source_summary) if source_summary else "No external sources (used training knowledge)"
     
@@ -906,6 +935,7 @@ async def stream_chat_reply(
     session_id: str,
     content: str,
     model: str,
+    reasoning_enabled: bool = False,
 ):
     """
     Main orchestrator for streaming chat response generation.
@@ -917,6 +947,7 @@ async def stream_chat_reply(
       4. Apply system-level verification
       5. Save to database
       6. Auto-save important memories
+      7. Generate reasoning (if enabled)
     """
     # ─────────────────────────────────────────────────────────────────────
     # Step 0: Initialize reasoning tracker
@@ -930,16 +961,30 @@ async def stream_chat_reply(
     # ─────────────────────────────────────────────────────────────────────
     # Step 1: Save user message
     # ─────────────────────────────────────────────────────────────────────
+    user_msg = {
+        'role': 'user',
+        'content': content,
+        'created_at': datetime.utcnow(),
+    }
+    
+    # Include attachment reference if file was uploaded for this session
+    try:
+        attachments = list_file_attachments(session_id)
+        if attachments:
+            # Use the most recent attachment
+            latest_file = attachments[0]
+            user_msg['attachment'] = {
+                'filename': latest_file.get('filename', 'unknown'),
+                'content': latest_file.get('content', '')[:500],  # Store snippet for UI display
+            }
+            logger.info(f'Including attachment in user message: {latest_file.get("filename")}')
+    except Exception as e:
+        logger.warning(f'Could not fetch attachments for message: {e}')
+    
     sessions_collection.update_one(
         {'id': session_id},
         {
-            '$push': {
-                'messages': {
-                    'role': 'user',
-                    'content': content,
-                    'created_at': datetime.utcnow(),
-                }
-            },
+            '$push': {'messages': user_msg},
             '$set': {'updated_at': datetime.utcnow()},
         },
     )
@@ -1075,35 +1120,59 @@ async def stream_chat_reply(
     logger.info('Answer verified after streaming', extra={'session_id': session_id})
     
     # ─────────────────────────────────────────────────────────────────────
-    # Step 6: Generate reasoning by asking the MODEL to explain itself
+    # Step 6: Generate reasoning by asking the MODEL to explain itself (if enabled)
     # ─────────────────────────────────────────────────────────────────────
-    yield json.dumps({'type': 'reasoning_starting', 'data': 'Generating reasoning...'})
-    reasoning_prompt = _build_reasoning_prompt(
-        user_query=content,
-        assistant_answer=assistant_answer,
-        sources_used=sources,
-        loaded_sources=loaded_sources,
-        confidence=overall_confidence,
-        unverified_count=len(unverified),
-        guard_eval=guard_eval,
-    )
-    
-    logger.info('Generating reasoning from model', extra={'session_id': session_id})
     reasoning_text = ''
-    try:
-        async for token in stream_ollama(
-            prompt=reasoning_prompt,
-            model=model,
-            system="You are an AI assistant explaining your reasoning process. Be clear, honest, and concise.",
-        ):
-            reasoning_text += token
-            # Stream reasoning in real-time
-            yield json.dumps({'type': 'reasoning_token', 'data': token})
+    
+    if reasoning_enabled:
+        yield json.dumps({'type': 'reasoning_starting', 'data': 'Generating reasoning...'})
         
-        logger.info('Reasoning generated: %s chars', len(reasoning_text), extra={'session_id': session_id})
-    except Exception as e:
-        logger.error(f'Reasoning generation failed: {e}')
-        reasoning_text = '[Reasoning generation failed]'
+        # Get follow-up information from metadata
+        is_follow_up = context_meta.get('is_follow_up', False)
+        primary_answer = _get_primary_assistant_answer(session_id) if is_follow_up else None
+        
+        reasoning_prompt = _build_reasoning_prompt(
+            user_query=content,
+            assistant_answer=assistant_answer,
+            sources_used=sources,
+            loaded_sources=loaded_sources,
+            confidence=overall_confidence,
+            unverified_count=len(unverified),
+            guard_eval=guard_eval,
+            is_follow_up=is_follow_up,
+            primary_answer=primary_answer,
+        )
+        
+        logger.info('Generating reasoning from model', extra={'session_id': session_id})
+        try:
+            async for token in stream_ollama(
+                prompt=reasoning_prompt,
+                model=model,
+                system="You are an AI assistant explaining your reasoning process. Be clear, honest, and concise.",
+            ):
+                reasoning_text += token
+                # Stream reasoning in real-time
+                yield json.dumps({'type': 'reasoning_token', 'data': token})
+            
+            logger.info('Reasoning generated: %s chars', len(reasoning_text), extra={'session_id': session_id})
+        except Exception as e:
+            logger.error(f'Reasoning generation failed: {e}')
+            reasoning_text = '[Reasoning generation failed]'
+    else:
+        logger.info('Reasoning generation skipped (disabled)', extra={'session_id': session_id})
+
+    reasoning_veto = (
+        assess_reasoning_veto(reasoning_text, overall_confidence, assistant_answer)
+        if reasoning_enabled
+        else {
+            'level': 'none',
+            'signals': [],
+            'confidence_cap': 1.0,
+            'reason': 'Reasoning disabled',
+            'should_refuse': False,
+            'refusal_message': '',
+        }
+    )
     
     # ─────────────────────────────────────────────────────────────────────
     # Step 7: Finalize reasoning chain
@@ -1131,7 +1200,12 @@ async def stream_chat_reply(
         'content': assistant_answer.strip(),
         'created_at': datetime.utcnow(),
         'meta': {
+            'source_used': 'combined',
+            'sources_considered': sources,
+            'source_relevance': context_meta.get('source_relevance', {}),
             'sources_used': list(sources.keys()),
+            'loaded_sources': loaded_sources,
+            'has_factual_content': any(s in sources for s in ['file', 'memory', 'web']),
             'confidence_initial': overall_confidence,
             'confidence_final': overall_confidence * guard_eval.get('cap', 1.0),
             
@@ -1145,6 +1219,7 @@ async def stream_chat_reply(
                 flag.dict() if hasattr(flag, 'dict') else flag
                 for flag in uncertainty_flags[:5]
             ],
+            'reasoning_veto': reasoning_veto,
             
             # Reasoning details
             'reasoning': reasoning_text,
@@ -1197,10 +1272,13 @@ async def stream_chat_reply(
     yield json.dumps({
         'type': 'done',
         'metadata': {
+            'source_used': 'combined',
             'sources_used': list(sources.keys()),
+            'supplemented_with': list(sources.keys()),
             'sources_considered': sources,
             'source_relevance': context_meta.get('source_relevance', {}),
             'loaded_sources': loaded_sources,
+            'reasoning_veto': reasoning_veto,
             
             'confidence_initial': overall_confidence,
             'confidence_final': overall_confidence * guard_eval.get('cap', 1.0),
@@ -1215,6 +1293,7 @@ async def stream_chat_reply(
                 flag.dict() if hasattr(flag, 'dict') else flag
                 for flag in uncertainty_flags[:5]
             ],
+            'source_conflicts': [],  # TODO: Implement conflict detection service
             
             'reasoning_chain': reasoning_chain_for_frontend,
             'answer_length': len(assistant_answer),

@@ -3,19 +3,23 @@ import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { MemoryStore } from '../store/memory.store';
 import { ChatStore } from '../../chat/store/chat.store';
-import { AppButtonComponent } from '../../../shared/ui/button/app-button.component';
 import { AutoResizeTextareaDirective } from '../../../shared/directives/auto-resize-textarea.directive';
 
 @Component({
   selector: 'app-memory-panel',
   standalone: true,
-  imports: [FormsModule, CommonModule, AppButtonComponent, AutoResizeTextareaDirective],
+  imports: [
+    FormsModule,
+    CommonModule,
+    AutoResizeTextareaDirective,
+  ],
   templateUrl: './memory.page.html',
   styleUrls: ['./memory.page.css'],
 })
 export class MemoryPage {
   private _sessionId = signal<string | null>(null);
   private searchTimer: any;
+  isCategoryDropdownOpen = false;
 
   @Input({ required: true })
   set sessionId(value: string) {
@@ -26,6 +30,15 @@ export class MemoryPage {
 
   newMemory = '';
   newCategory: 'preference_or_fact' | 'important' | 'other' = 'preference_or_fact';
+
+  readonly categoryOptions: Array<{
+    value: 'preference_or_fact' | 'important' | 'other';
+    label: string;
+  }> = [
+    { value: 'preference_or_fact', label: 'Preference/Fact' },
+    { value: 'important', label: 'Important' },
+    { value: 'other', label: 'Other' },
+  ];
 
   constructor(
     public store: MemoryStore,
@@ -64,5 +77,19 @@ export class MemoryPage {
     this.searchTimer = setTimeout(() => {
       this.store.search(q);
     }, 300);
+  }
+
+  toggleCategoryDropdown(event: MouseEvent) {
+    event.stopPropagation();
+    this.isCategoryDropdownOpen = !this.isCategoryDropdownOpen;
+  }
+
+  selectCategory(value: 'preference_or_fact' | 'important' | 'other') {
+    this.newCategory = value;
+    this.isCategoryDropdownOpen = false;
+  }
+
+  getCurrentCategoryLabel(): string {
+    return this.categoryOptions.find((opt) => opt.value === this.newCategory)?.label || 'Select';
   }
 }

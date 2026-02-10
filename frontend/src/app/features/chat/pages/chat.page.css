@@ -30,7 +30,7 @@
 .selected-value {
   padding: 8px 16px;
   background: var(--primary-lite);
-  border-radius: 50px;
+  border-radius: 10px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -188,7 +188,6 @@
   align-items: center;
   gap: 5px;
   padding: 0px 15px;
-  border-radius: var(--radius-lg);
 }
 
 .typing-indicator .dot {
@@ -232,6 +231,13 @@
   padding: 10px;
   background: var(--primary-light);
   border-radius: 0 0 12px 12px;
+}
+
+.chat-button-wrapper {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-left: 50px;
+  padding-bottom: 10px;
 }
 
 .chat-input {
