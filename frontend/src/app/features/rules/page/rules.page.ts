@@ -128,11 +128,7 @@ export class RulesPanelComponent implements OnInit {
 
   // Reset to defaults
   resetToDefaults(): void {
-    if (
-      confirm(
-        'Reset all rules to default values?',
-      )
-    ) {
+    if (confirm('Reset all rules to default values?')) {
       this.rulesStore.resetToDefaults();
     }
   }

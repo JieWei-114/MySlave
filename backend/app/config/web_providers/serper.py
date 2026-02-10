@@ -36,7 +36,7 @@ class SerperProvider(WebSearchProvider):
         if not settings.SERPER_API_KEY:
             logger.warning('Serper API key missing')
             return []
-        
+
         if not settings.SERPER_URL:
             logger.warning('Serper URL missing')
             return []
@@ -87,4 +87,3 @@ class SerperProvider(WebSearchProvider):
             for r in results
             if r.get('link')
         ]
-    

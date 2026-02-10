@@ -111,10 +111,16 @@ class Settings(BaseSettings):
     EXTRACT_KEY_POINTS_MAX: int = 3  # Max key points to extract from URL content
     KEY_POINT_EXTRACTION_SAMPLE_SIZE: int = 30  # Sample first N sentences
 
-
     # Auto-routing keywords for research-focused queries (Tavily)
     WEB_TAVILY_KEYWORDS: list[str] = Field(
-        default_factory=lambda: ['research', 'deep dive', 'detailed', 'analyze', 'comprehensive', 'thorough']
+        default_factory=lambda: [
+            'research',
+            'deep dive',
+            'detailed',
+            'analyze',
+            'comprehensive',
+            'thorough',
+        ]
     )
 
     # ============================================================
@@ -156,7 +162,9 @@ class Settings(BaseSettings):
     # ============================================================
     MEMORY_MAX_CONTENT_LENGTH: int | None = None  # Max chars per memory entry
     MEMORY_MIN_ASSISTANT_LENGTH: int | None = None  # Min chars in assistant response to remember
-    MEMORY_MIN_CONVERSATION_LENGTH: int | None = None  # Min combined user+assistant length to remember
+    MEMORY_MIN_CONVERSATION_LENGTH: int | None = (
+        None  # Min combined user+assistant length to remember
+    )
 
     # Memory function defaults
     MEMORY_DEFAULT_CONFIDENCE: float = 0.95  # Default confidence for new memories
@@ -168,8 +176,12 @@ class Settings(BaseSettings):
     CONFIDENCE_FILE: float = 0.99  # User-uploaded files
     CONFIDENCE_MEMORY: float = 0.85  # Stored memories
     CONFIDENCE_WEB: float = 0.65  # Web search results
-    CONFIDENCE_HISTORY: float = 0.0  # Conversation history (contextual only, not counted in confidence)
-    CONFIDENCE_FOLLOW_UP: float = 0.0  # Follow-up context (contextual only, not counted in confidence)
+    CONFIDENCE_HISTORY: float = (
+        0.0  # Conversation history (contextual only, not counted in confidence)
+    )
+    CONFIDENCE_FOLLOW_UP: float = (
+        0.0  # Follow-up context (contextual only, not counted in confidence)
+    )
     CONFIDENCE_NONE: float = 0.3  # No context available
 
     # ============================================================
@@ -207,13 +219,15 @@ class Settings(BaseSettings):
     # Sentence scoring weights (for key point extraction)
     SENTENCE_SCORE_POSITION_WEIGHT: float = 0.6  # Weight for sentence position
     SENTENCE_SCORE_LENGTH_WEIGHT: float = 0.4  # Weight for sentence length
-    
+
     # Text truncation limits (for logging and previews)
     TRUNCATE_ANSWER_LONG: int = 300  # Long answer preview
 
     # Default confidence values
-    CONFIDENCE_UNCERTAINTY: float = 0.7  # Threshold for uncertainty detection (used by entity_validation_service)
-    
+    CONFIDENCE_UNCERTAINTY: float = (
+        0.7  # Threshold for uncertainty detection (used by entity_validation_service)
+    )
+
     # ============================================================
     # SYSTEM INSTRUCTIONS
     # ============================================================
@@ -356,5 +370,6 @@ HARD CONSTRAINTS (NON-NEGOTIABLE)
     class Config:
         env_file = '.env'
         case_sensitive = True
+
 
 settings = Settings()

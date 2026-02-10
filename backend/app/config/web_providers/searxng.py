@@ -1,12 +1,13 @@
+import logging
 from typing import Any
 
-import logging
 import httpx
 
 from app.config.settings import settings
 from app.config.web_providers.base import WebSearchProvider
 
 logger = logging.getLogger(__name__)
+
 
 class SearXNGProvider(WebSearchProvider):
     name = 'searxng'

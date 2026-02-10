@@ -7,11 +7,11 @@ Handles context assembly from multiple sources:
 - Follow-up mode resolution
 - Confidence calculation
 """
+
 import logging
 import re
 
 from app.config.settings import settings
-
 from app.utils.text_utils import calculate_sentence_score, split_into_sentences
 
 logger = logging.getLogger(__name__)
@@ -49,7 +49,7 @@ def extract_key_points(text: str, max_points: int = None) -> list[str]:
     """
     if max_points is None:
         max_points = settings.EXTRACT_KEY_POINTS_MAX
-    
+
     if not text or len(text) < TEXT_MIN_LENGTH:
         return []
 
@@ -62,7 +62,7 @@ def extract_key_points(text: str, max_points: int = None) -> list[str]:
     # Score sentences using utility function
     scored = []
     total_sentences = min(len(sentences), settings.KEY_POINT_EXTRACTION_SAMPLE_SIZE)
-    
+
     for idx, sent in enumerate(sentences[:total_sentences]):
         score = calculate_sentence_score(idx, len(sent), total_sentences)
         scored.append((score, sent))
@@ -77,7 +77,7 @@ def extract_key_points(text: str, max_points: int = None) -> list[str]:
 def extract_file_content(user_content: str) -> tuple[str, dict | None]:
     """
     Extract uploaded file content from user message.
-    
+
     """
     if not user_content:
         return user_content, None
@@ -129,7 +129,20 @@ def rank_search_results(results: list[dict], query: str) -> list[dict]:
     query_terms = set(query.lower().split())
     # Remove common words that don't add relevance
     stop_words = {
-        'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by',
+        'the',
+        'a',
+        'an',
+        'and',
+        'or',
+        'but',
+        'in',
+        'on',
+        'at',
+        'to',
+        'for',
+        'of',
+        'with',
+        'by',
     }
     query_terms = query_terms - stop_words
 
@@ -173,33 +186,32 @@ def calculate_weighted_confidence(
     """
     if not sources_considered:
         return CONFIDENCE_NONE
-    
+
     if source_relevance is None:
-        source_relevance = {src:1.0 for src in sources_considered.keys()}
-    
+        source_relevance = {src: 1.0 for src in sources_considered.keys()}
+
     # Filter out contextual-only sources
     if factual_sources_only:
         factual_sources = {
-            k: v for k, v in sources_considered.items() 
-            if k not in {'history', 'follow-up'}
+            k: v for k, v in sources_considered.items() if k not in {'history', 'follow-up'}
         }
-        
+
         if not factual_sources:
             logger.info('No factual sources available, using default confidence')
             return CONFIDENCE_NONE
-        
+
         sources_considered = factual_sources
         logger.info(
             'Factual sources for confidence: %s (excluded contextual: history, follow-up)',
-            list(sources_considered.keys())
+            list(sources_considered.keys()),
         )
-    
+
     # Check frozen sources to ensure they actually have content
     if loaded_sources:
         valid_factual_sources = {}
         for source_name, confidence in sources_considered.items():
             source_data = loaded_sources.get(source_name, {})
-            
+
             # Verify source has actual content
             if source_name == 'file':
                 if source_data.get('available') and source_data.get('count', 0) > 0:
@@ -213,21 +225,21 @@ def calculate_weighted_confidence(
             else:
                 # Other sources (url-extract, etc.)
                 valid_factual_sources[source_name] = confidence
-        
+
         if not valid_factual_sources:
             logger.warning('No valid factual sources with content')
             return CONFIDENCE_NONE
-        
+
         sources_considered = valid_factual_sources
-    
+
     # Weight by relevance × confidence
     weighted_scores = []
     for source_name, confidence in sources_considered.items():
         relevance = source_relevance.get(source_name, 0.5)
         weighted_score = confidence * relevance
         weighted_scores.append(weighted_score)
-    
+
     # Use average of weighted scores
     avg_confidence = sum(weighted_scores) / len(weighted_scores) if weighted_scores else 0.0
-    
+
     return min(max(avg_confidence, 0.0), 1.0)  # Clamp to [0, 1]

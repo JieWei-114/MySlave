@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from typing import Optional
 
 import httpx
@@ -8,8 +9,6 @@ from bs4 import BeautifulSoup
 from readability import Document
 
 from app.config.settings import settings
-
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +46,9 @@ async def _fetch_html(url: str) -> Optional[str]:
             resp.raise_for_status()
 
             if resp.content and len(resp.content) > MAX_BYTES:
-                logger.warning('Local extract skipped (response too large): %s bytes', len(resp.content))
+                logger.warning(
+                    'Local extract skipped (response too large): %s bytes', len(resp.content)
+                )
                 return None
 
             ctype = resp.headers.get('content-type', '').lower()

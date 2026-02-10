@@ -4,14 +4,15 @@ Chat Session Service
 Handles all CRUD operations for chat sessions
 
 """
+
 import logging
 import uuid
 from datetime import datetime
 
 from app.core.db import sessions_collection
 from app.models.dto import RulesConfig
-from app.services.memory_service import delete_memories_for_session
 from app.services.file_extraction_service import delete_file_attachments_for_session
+from app.services.memory_service import delete_memories_for_session
 
 logger = logging.getLogger(__name__)
 
@@ -48,19 +49,16 @@ def create_session(title: str) -> dict:
 def get_session(session_id: str) -> dict | None:
     """
     Retrieve a session by ID.
-    
+
     """
-    session = sessions_collection.find_one(
-        {'id': session_id},
-        {'_id': 0, 'pending_attachment': 0}
-    )
+    session = sessions_collection.find_one({'id': session_id}, {'_id': 0, 'pending_attachment': 0})
     return session
 
 
 def get_session_rules(session_id: str) -> dict:
     """
     Get session-specific rules. Always returns a dict.
-    
+
     """
     try:
         session = sessions_collection.find_one(
@@ -115,11 +113,10 @@ def list_sessions() -> list[dict]:
 def rename_session(session_id: str, title: str) -> dict | None:
     """
     Rename a session.
-    
+
     """
     result = sessions_collection.update_one(
-        {'id': session_id},
-        {'$set': {'title': title, 'updated_at': datetime.utcnow()}}
+        {'id': session_id}, {'$set': {'title': title, 'updated_at': datetime.utcnow()}}
     )
 
     if result.matched_count == 0:
@@ -131,12 +128,12 @@ def rename_session(session_id: str, title: str) -> dict | None:
 def delete_session(session_id: str) -> bool:
     """
     Delete a session and all associated data.
-    
+
     Also deletes:
     - Associated memories
     - File attachments
     - Removes from session order
-    
+
     """
     result = sessions_collection.delete_one({'id': session_id})
     if result.deleted_count != 1:
@@ -151,5 +148,5 @@ def delete_session(session_id: str) -> bool:
     # Delete associated data
     delete_memories_for_session(session_id)
     delete_file_attachments_for_session(session_id)
-    
+
     return True

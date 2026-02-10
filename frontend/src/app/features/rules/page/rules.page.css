@@ -41,7 +41,7 @@
 .yellow {
   padding-left: 10px;
   border-radius: var(--radius-md);
-  border-left: 3px solid #FFC107;
+  border-left: 3px solid #ffc107;
 }
 
 .lite-yellow {
@@ -138,7 +138,7 @@
 
 .rule-item.advance-mode {
   padding: 15px 10px;
-  margin-bottom:10px;
+  margin-bottom: 10px;
 }
 
 .rule-item.advance-mode:hover {
@@ -159,7 +159,7 @@
   transition: all 0.2s ease;
 }
 
-.bottom{
+.bottom {
   margin-bottom: 10px;
 }
 

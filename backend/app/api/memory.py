@@ -7,6 +7,7 @@ import logging
 
 from fastapi import APIRouter, HTTPException, Query
 
+from app.config.constants import HTTP_BAD_REQUEST, HTTP_INTERNAL_ERROR
 from app.models.dto import CreateMemoryRequest
 from app.services.memory_service import (
     add_memory,
@@ -17,17 +18,13 @@ from app.services.memory_service import (
     set_memory_enabled,
 )
 
-from app.config.constants import (
-    HTTP_INTERNAL_ERROR, HTTP_BAD_REQUEST
-)
-
 router = APIRouter(prefix='/memory', tags=['memory'])
 logger = logging.getLogger(__name__)
 
 
 @router.get('/')
 def get_memories(
-  session_id: str = Query(...),
+    session_id: str = Query(...),
 ):
     """
     List all enabled memories for a session, with id, content, created_at, source
@@ -52,12 +49,14 @@ def create_memory(payload: CreateMemoryRequest):
     try:
         logger.info('Creating memory for session %s', payload.session_id)
         return add_memory(
-          payload.content,
-          payload.session_id,
-          category=payload.category or 'other',
+            payload.content,
+            payload.session_id,
+            category=payload.category or 'other',
         )
     except Exception as e:
-        logger.error('Failed to create memory for session %s: %s', payload.session_id, e, exc_info=True)
+        logger.error(
+            'Failed to create memory for session %s: %s', payload.session_id, e, exc_info=True
+        )
         raise HTTPException(status_code=HTTP_INTERNAL_ERROR, detail='Failed to create memory')
 
 
@@ -115,10 +114,10 @@ def search(
 ):
     """
     Semantic search for memories using embeddings.
-    
+
     Finds memories related to query using vector similarity.
     More accurate than keyword search for finding relevant context.
-    
+
     """
     try:
         if not session_id:
@@ -137,7 +136,7 @@ async def compress(
 ):
     """
     Compress and consolidate memories for a session.
-    
+
     """
     try:
         if not session_id:
@@ -148,4 +147,3 @@ async def compress(
     except Exception as e:
         logger.error('Failed to compress memories: %s', e, exc_info=True)
         raise HTTPException(status_code=HTTP_INTERNAL_ERROR, detail='Failed to compress memories')
-    

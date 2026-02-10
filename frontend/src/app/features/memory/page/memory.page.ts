@@ -8,11 +8,7 @@ import { AutoResizeTextareaDirective } from '../../../shared/directives/auto-res
 @Component({
   selector: 'app-memory-panel',
   standalone: true,
-  imports: [
-    FormsModule,
-    CommonModule,
-    AutoResizeTextareaDirective,
-  ],
+  imports: [FormsModule, CommonModule, AutoResizeTextareaDirective],
   templateUrl: './memory.page.html',
   styleUrls: ['./memory.page.css'],
 })

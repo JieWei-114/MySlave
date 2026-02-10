@@ -13,13 +13,9 @@ from fastapi import APIRouter, File, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
 
 from app.config.ai_models import AVAILABLE_MODELS
-from app.core.db import sessions_collection
-
+from app.config.constants import HTTP_BAD_REQUEST, HTTP_INTERNAL_ERROR, HTTP_NOT_FOUND
 from app.config.settings import settings
-from app.config.constants import (
-    HTTP_INTERNAL_ERROR, HTTP_BAD_REQUEST, HTTP_NOT_FOUND
-)
-
+from app.core.db import sessions_collection
 from app.models.dto import (
     AttachFileRequest,
     CreateSessionRequest,
@@ -35,11 +31,11 @@ from app.services.chat_service import (
     stream_chat_reply,
 )
 from app.services.file_extraction_service import (
-    extract_text_from_file,
-    truncate_content,
-    store_file_attachment,
-    list_file_attachments,
     delete_file_attachment_for_session,
+    extract_text_from_file,
+    list_file_attachments,
+    store_file_attachment,
+    truncate_content,
 )
 
 router = APIRouter(prefix='/chat', tags=['chat'])
@@ -114,13 +110,15 @@ async def stream_message(
 ):
     """
     Stream chat response using Server-Sent Events (SSE).
-    
+
     Frontend connects via EventSource to receive real-time token streaming.
 
     """
     try:
-        logger.info(f'Streaming message for session {session_id}, content_len={len(content)}, model={model}, reasoning={reasoning}')
-        
+        logger.info(
+            f'Streaming message for session {session_id}, content_len={len(content)}, model={model}, reasoning={reasoning}'
+        )
+
         async def event_generator():
             try:
                 async for chunk in stream_chat_reply(
@@ -129,9 +127,8 @@ async def stream_message(
                     model,
                     reasoning_enabled=reasoning,
                 ):
-
                     if isinstance(chunk, bytes):
-                        chunk = chunk.decode("utf-8")
+                        chunk = chunk.decode('utf-8')
 
                     chunk = chunk.strip()
                     if not chunk:
@@ -141,35 +138,25 @@ async def stream_message(
                         payload = json.loads(chunk)
 
                         if payload.get('type') == 'done':
-                            yield (
-                                "event: done\n"
-                                f"data: {json.dumps(payload)}\n\n"
-                            )
+                            yield (f'event: done\ndata: {json.dumps(payload)}\n\n')
 
                         elif payload.get('type') == 'token':
-                            yield (
-                                "event: token\n"
-                                f"data: {json.dumps(payload['data'])}\n\n"
-                            )
+                            yield (f'event: token\ndata: {json.dumps(payload["data"])}\n\n')
 
                         elif payload.get('type') == 'reasoning_token':
                             yield (
-                                "event: reasoning_token\n"
-                                f"data: {json.dumps(payload['data'])}\n\n"
+                                f'event: reasoning_token\ndata: {json.dumps(payload["data"])}\n\n'
                             )
 
                         elif payload.get('type') == 'error':
-                            yield (
-                                "event: error\n"
-                                f"data: {json.dumps(payload)}\n\n"
-                            )
+                            yield (f'event: error\ndata: {json.dumps(payload)}\n\n')
 
                     except json.JSONDecodeError:
                         # normal token
-                        yield f"data: {quote(chunk)}\n\n"
+                        yield f'data: {quote(chunk)}\n\n'
             except Exception as e:
                 logger.error(f'Error in stream for session {session_id}: {e}')
-                yield f"event: error\ndata: {json.dumps({'error': str(e)})}\n\n"
+                yield f'event: error\ndata: {json.dumps({"error": str(e)})}\n\n'
 
         logger.info(f'Stream started for session {session_id}')
         return StreamingResponse(
@@ -185,7 +172,7 @@ async def stream_message(
 def get_messages(session_id: str, limit: int = None, before: Optional[str] = None):
     if limit is None:
         limit = settings.API_MESSAGES_DEFAULT_LIMIT
-    
+
     session = sessions_collection.find_one({'id': session_id}, {'_id': 0, 'messages': 1})
 
     if not session:
@@ -251,7 +238,9 @@ def reorder_sessions(payload: ReorderSessionsRequest):
         return {'status': 'reordered'}
 
     except Exception as e:
-        raise HTTPException(status_code=HTTP_INTERNAL_ERROR, detail=f'Failed to reorder sessions: {str(e)}')
+        raise HTTPException(
+            status_code=HTTP_INTERNAL_ERROR, detail=f'Failed to reorder sessions: {str(e)}'
+        )
 
 
 @router.post('/upload')
@@ -262,7 +251,7 @@ async def upload_file(file: UploadFile = File(...)):
     """
     try:
         logger.info(f'Uploading file: {file.filename}')
-        
+
         # Read file content
         file_content = await file.read()
 
@@ -297,7 +286,9 @@ async def upload_file(file: UploadFile = File(...)):
         raise
     except Exception as e:
         logger.error(f'Failed to process file {file.filename}: {e}')
-        raise HTTPException(status_code=HTTP_INTERNAL_ERROR, detail=f'Failed to process file: {str(e)}')
+        raise HTTPException(
+            status_code=HTTP_INTERNAL_ERROR, detail=f'Failed to process file: {str(e)}'
+        )
 
 
 @router.post('/{session_id}/attachment')
@@ -315,7 +306,9 @@ def attach_file(session_id: str, payload: AttachFileRequest):
         content = payload.content.strip() if payload.content else ''
 
         if not filename or not content:
-            raise HTTPException(status_code=HTTP_BAD_REQUEST, detail='filename and content are required')
+            raise HTTPException(
+                status_code=HTTP_BAD_REQUEST, detail='filename and content are required'
+            )
 
         truncated = truncate_content(content)
         logger.info(f'Attaching file {filename} to session {session_id}, length={len(truncated)}')
@@ -341,8 +334,7 @@ def attach_file(session_id: str, payload: AttachFileRequest):
     except Exception as e:
         logger.error(f'Failed to attach file to session {session_id}: {e}')
         raise HTTPException(status_code=HTTP_INTERNAL_ERROR, detail='Failed to attach file')
-    
-    
+
 
 @router.get('/{session_id}/files')
 def list_files(session_id: str):

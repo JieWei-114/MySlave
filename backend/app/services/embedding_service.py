@@ -4,6 +4,7 @@ Handles text-to-vector embeddings using sentence-transformers
 Used for semantic similarity search in memory and context matching
 
 """
+
 from typing import Iterable, Sequence
 
 import numpy as np

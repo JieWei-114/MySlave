@@ -4,6 +4,7 @@ Handles communication with Ollama LLM API
 Supports both streaming and non-streaming requests
 
 """
+
 import json
 import logging
 from typing import Optional
@@ -18,7 +19,7 @@ logger = logging.getLogger(__name__)
 async def stream_ollama(prompt: str, model: str, system: Optional[str] = None):
     """
     Stream response from Ollama LLM token by token
-    
+
     """
     logger.info(
         'stream_ollama called with system=%s (type=%s)',
@@ -32,11 +33,11 @@ async def stream_ollama(prompt: str, model: str, system: Optional[str] = None):
             if system:
                 payload['system'] = system
                 logger.info('Added system to payload')
-            
+
             logger.info('Ollama stream payload keys: %s', list(payload.keys()))
             if 'system' in payload:
                 logger.info('  Ollama system prompt (len=%s)', len(payload['system']))
-            
+
             # Stream response
             async with client.stream(
                 'POST',
@@ -82,7 +83,7 @@ async def call_ollama_once(prompt: str, model: str, system: Optional[str] = None
             payload = {'model': model, 'prompt': prompt, 'stream': False}
             if system:
                 payload['system'] = system
-            
+
             # Make request
             resp = await client.post(
                 settings.OLLAMA_URL,
@@ -98,4 +99,3 @@ async def call_ollama_once(prompt: str, model: str, system: Optional[str] = None
     except (ValueError, AttributeError):
         logger.error('ollama returned invalid JSON body')
         return ''
-    

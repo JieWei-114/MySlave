@@ -96,4 +96,3 @@ class TavilyProvider(WebSearchProvider):
             for r in results
             if r.get('url')
         ]
-    

@@ -39,4 +39,3 @@ class DuckDuckGoProvider(WebSearchProvider):
             for r in results
             if r.get('href')
         ]
-    

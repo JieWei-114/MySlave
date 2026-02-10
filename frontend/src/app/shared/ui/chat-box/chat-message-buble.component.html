@@ -16,9 +16,7 @@
         <span class="reasoning-icon">
           {{ showReasoning ? '▼' : '▶' }}
         </span>
-        <span class="reasoning-label">
-          AI Thinking Process
-        </span>
+        <span class="reasoning-label"> AI Thinking Process </span>
         <span class="reasoning-confidence" *ngIf="meta.confidence_final">
           ({{ (meta.confidence_final * 100).toFixed(0) }}% confident)
         </span>

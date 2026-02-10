@@ -1,11 +1,10 @@
+import logging
 from datetime import date
 
 import httpx
 
 from app.config.settings import settings
 from app.core.db import tavily_quota_collection
-
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +29,7 @@ async def extract_url(url: str) -> str:
     if not settings.TAVILY_API_KEY:
         logger.warning('Tavily extract missing API key')
         return ''
-    
+
     if not settings.TAVILY_URL:
         logger.warning('Tavily extract missing URL')
         return ''
@@ -79,4 +78,3 @@ async def extract_url(url: str) -> str:
     except Exception as e:
         logger.warning('Tavily extract parse error: %s', e)
         return ''
-    

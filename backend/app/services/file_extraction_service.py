@@ -17,6 +17,7 @@ Features:
 - Encoding fallback (UTF-8 -> Latin-1)
 - File attachment persistence to MongoDB
 """
+
 import io
 import logging
 import uuid
@@ -34,10 +35,10 @@ FILE_UPLOAD_MAX_CHARS = settings.FILE_UPLOAD_MAX_CHARS
 def extract_text_from_file(file_content: bytes, filename: str) -> str:
     """
     Extract text content from various file types.
-    
+
     Automatically detects file type based on extension and routes to appropriate
     extraction function. Applies content truncation based on settings.
-    
+
     """
     filename_lower = filename.lower()
 
@@ -70,10 +71,10 @@ def extract_text_from_file(file_content: bytes, filename: str) -> str:
 def extract_from_pdf(file_content: bytes) -> str:
     """
     Extract text from PDF file using PyPDF2.
-    
+
     Reads all pages and concatenates text content.
     Handles various PDF formats and encodings.
-    
+
     """
     try:
         import PyPDF2
@@ -172,6 +173,7 @@ def truncate_content(content: str, max_chars: int = None) -> str:
 # FILE ATTACHMENT PERSISTENCE
 # ============================================================
 
+
 def store_file_attachment(
     session_id: str,
     filename: str,
@@ -180,51 +182,51 @@ def store_file_attachment(
 ) -> dict:
     # Store an uploaded file attachment to database
     if len(content) > settings.FILE_ATTACHMENT_MAX_CHARS:
-        content = content[:settings.FILE_ATTACHMENT_MAX_CHARS]
-        logger.warning(f"File {filename} truncated to {settings.FILE_ATTACHMENT_MAX_CHARS} chars")
+        content = content[: settings.FILE_ATTACHMENT_MAX_CHARS]
+        logger.warning(f'File {filename} truncated to {settings.FILE_ATTACHMENT_MAX_CHARS} chars')
 
     expires_at = datetime.utcnow() + timedelta(days=settings.FILE_ATTACHMENT_EXPIRY_DAYS)
 
     file_attachment = {
-        "id": str(uuid.uuid4()),
-        "session_id": session_id,
-        "filename": filename,
-        "file_type": file_type,
-        "size_bytes": len(content.encode()),
-        "size_chars": len(content),
-        "content": content,
-        "uploaded_at": datetime.utcnow(),
-        "expires_at": expires_at,
+        'id': str(uuid.uuid4()),
+        'session_id': session_id,
+        'filename': filename,
+        'file_type': file_type,
+        'size_bytes': len(content.encode()),
+        'size_chars': len(content),
+        'content': content,
+        'uploaded_at': datetime.utcnow(),
+        'expires_at': expires_at,
     }
 
     result = file_attachments_collection.insert_one(file_attachment)
-    file_attachment["_id"] = result.inserted_id
-    logger.info(f"File attachment stored: {filename} (ID: {file_attachment['id']})")
+    file_attachment['_id'] = result.inserted_id
+    logger.info(f'File attachment stored: {filename} (ID: {file_attachment["id"]})')
     return file_attachment
 
 
 def get_file_attachment(file_id: str) -> dict | None:
     # Retrieve a file attachment
-    return file_attachments_collection.find_one({"id": file_id}, {"_id": 0})
+    return file_attachments_collection.find_one({'id': file_id}, {'_id': 0})
 
 
 def list_file_attachments(session_id: str) -> list[dict]:
     # List file attachments for a session (without content)
     cursor = file_attachments_collection.find(
-        {"session_id": session_id},
-        {"_id": 0, "content": 0},
-    ).sort("uploaded_at", -1)
+        {'session_id': session_id},
+        {'_id': 0, 'content': 0},
+    ).sort('uploaded_at', -1)
     return list(cursor)
 
 
 def delete_file_attachment_for_session(session_id: str, file_id: str) -> bool:
     # Delete a file attachment for a specific session
-    result = file_attachments_collection.delete_one({"id": file_id, "session_id": session_id})
+    result = file_attachments_collection.delete_one({'id': file_id, 'session_id': session_id})
     return result.deleted_count > 0
 
 
 def delete_file_attachments_for_session(session_id: str) -> int:
     # Delete all file attachments for a session
-    result = file_attachments_collection.delete_many({"session_id": session_id})
-    logger.info(f"Deleted {result.deleted_count} file attachments for session {session_id}")
+    result = file_attachments_collection.delete_many({'session_id': session_id})
+    logger.info(f'Deleted {result.deleted_count} file attachments for session {session_id}')
     return result.deleted_count

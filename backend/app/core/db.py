@@ -56,11 +56,11 @@ try:
     synthesized_memory_collection.create_index([('session_id', 1), ('last_referenced_at', -1)])
     synthesized_memory_collection.create_index([('session_id', 1), ('category', 1)])
     synthesized_memory_collection.create_index([('session_id', 1), ('is_deprecated', 1)])
-    
+
     # File attachments indexes for expiration and retrieval
     file_attachments_collection.create_index([('session_id', 1), ('expires_at', 1)])
     file_attachments_collection.create_index([('session_id', 1), ('uploaded_at', -1)])
-    
+
     logger.info('Database indexes created successfully')
 except Exception as e:
     logger.warning(f'Index creation warning: {e}')

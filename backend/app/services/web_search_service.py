@@ -15,6 +15,7 @@ URL Extraction:
 - LocalExtract: Simple HTML parsing (free)
 
 """
+
 import logging
 import re
 from typing import Optional

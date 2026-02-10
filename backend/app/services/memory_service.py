@@ -5,9 +5,10 @@ Handles storage, retrieval, and management of user memories (facts, preferences,
 Uses semantic search with embeddings for intelligent context matching
 
 """
+
 import logging
-from datetime import datetime
 import uuid
+from datetime import datetime
 
 from bson import ObjectId
 from bson.errors import InvalidId
@@ -46,11 +47,10 @@ def serialize_memory(doc: dict) -> dict:
     }
 
 
-
 def get_session_memory_limit(session_id: str) -> int | None:
     """
     Get custom memory search limit for a session.
-    
+
     Sessions can override default memory limit via rules.memorySearchLimit.
     Used to control how many memories are returned in search results.
 
@@ -105,27 +105,33 @@ def add_memory(
 def list_all_memories(chat_sessionId: str):
     """
     Get all memories for a session (enabled and disabled).
-    
+
     Sorted by creation date ascending.
     Used for listing UI to show all stored memories.
-    
+
     """
-    cursor = synthesized_memory_collection.find({'session_id': chat_sessionId}).sort('created_at', 1)
+    cursor = synthesized_memory_collection.find({'session_id': chat_sessionId}).sort(
+        'created_at', 1
+    )
     return [serialize_memory(doc) for doc in cursor]
 
 
 def set_memory_enabled(memory_id: str, enabled: bool):
     """
     Enable or disable a memory without deleting it.
-    
+
     Disabled memories are not returned in searches or context selection.
 
     """
-    result = synthesized_memory_collection.update_one({'id': memory_id}, {'$set': {'enabled': enabled}})
+    result = synthesized_memory_collection.update_one(
+        {'id': memory_id}, {'$set': {'enabled': enabled}}
+    )
     if result.matched_count == 0:
         try:
             oid = ObjectId(memory_id)
-            result = synthesized_memory_collection.update_one({'_id': oid}, {'$set': {'enabled': enabled}})
+            result = synthesized_memory_collection.update_one(
+                {'_id': oid}, {'$set': {'enabled': enabled}}
+            )
         except InvalidId:
             result = None
 
@@ -136,7 +142,7 @@ def set_memory_enabled(memory_id: str, enabled: bool):
 def list_enabled_memories(chat_sessionId: str):
     """
     Get only enabled memories for a session.
-    
+
     Excludes disabled memories.
     Used for context selection in chat responses.
 
@@ -186,7 +192,7 @@ def delete_memory(memory_id: str):
 def delete_memories_for_session(chat_sessionId: str) -> int:
     """
     Delete all memories linked to a chat session.
-    
+
     Called when a session is deleted to clean up associated memories.
 
     """
@@ -197,7 +203,7 @@ def delete_memories_for_session(chat_sessionId: str) -> int:
 def search_memories(chat_sessionId: str, query: str, limit: int = None, threshold: float = None):
     """
     Search memories using semantic similarity with embeddings.
-    
+
     Implementation:
     1. Embed the query text using sentence-transformers
     2. Calculate cosine similarity to all memories
@@ -375,12 +381,13 @@ async def auto_memory_if_needed(
 # NEW: SYNTHESIZED MEMORY FUNCTIONS (Facts & Preferences)
 # ============================================================
 
+
 async def add_synthesized_memory(
     session_id: str,
     fact: str,
-    category: str = "general",
+    category: str = 'general',
     confidence: float = None,
-    source: str = "user_statement",
+    source: str = 'user_statement',
     tags: list[str] | None = None,
     source_file: str | None = None,
 ) -> dict:
@@ -395,30 +402,32 @@ async def add_synthesized_memory(
         if fact and fact.strip():
             embedding = embed([fact])[0]
     except Exception as e:
-        logger.warning(f"Failed to embed synthesized memory: {e}")
+        logger.warning(f'Failed to embed synthesized memory: {e}')
 
     memory_item = {
-        "id": str(uuid.uuid4()),
-        "session_id": session_id,
-        "category": category,
-        "key": fact[:MEMORY_KEY_TRUNCATION_LIMIT],  # Use beginning as key
-        "value": fact,
-        "confidence": min(1.0, max(0.0, confidence)),  # Clamp 0-1
-        "source": source,
-        "tags": tags,
-        "enabled": True,
-        "created_at": datetime.utcnow(),
-        "last_referenced_at": datetime.utcnow(),
-        "is_deprecated": False,
+        'id': str(uuid.uuid4()),
+        'session_id': session_id,
+        'category': category,
+        'key': fact[:MEMORY_KEY_TRUNCATION_LIMIT],  # Use beginning as key
+        'value': fact,
+        'confidence': min(1.0, max(0.0, confidence)),  # Clamp 0-1
+        'source': source,
+        'tags': tags,
+        'enabled': True,
+        'created_at': datetime.utcnow(),
+        'last_referenced_at': datetime.utcnow(),
+        'is_deprecated': False,
     }
 
     if embedding is not None:
-        memory_item["embedding"] = embedding
-    
+        memory_item['embedding'] = embedding
+
     if source_file:
-        memory_item["source_file"] = source_file
+        memory_item['source_file'] = source_file
 
     result = synthesized_memory_collection.insert_one(memory_item)
-    memory_item["_id"] = result.inserted_id
-    logger.info(f"Synthesized memory added: {fact[:MEMORY_LOG_TRUNCATION_LIMIT]}... (confidence: {confidence})")
+    memory_item['_id'] = result.inserted_id
+    logger.info(
+        f'Synthesized memory added: {fact[:MEMORY_LOG_TRUNCATION_LIMIT]}... (confidence: {confidence})'
+    )
     return memory_item

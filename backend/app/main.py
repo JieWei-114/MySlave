@@ -2,6 +2,7 @@
 Main application entry point
 Sets up FastAPI app with CORS, routers, and health checks
 """
+
 import logging
 import os
 

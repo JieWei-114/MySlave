@@ -5,35 +5,32 @@ Prompt templates and instruction snippets used by chat_service.
 
 # Used in build_prompt_with_memory() when user is following up on previous answer
 CONTINUATION_HINT_FOLLOWUP = (
-    "Key Follow-up Rules:\n"
-    "- Follow-up mode was applied here.\n"
-    "- This is a direct follow-up to the PRIMARY CONTEXT.\n"
-    "- Only answer specific items or references explicitly requested by the user.\n"
-    "- Do not summarize or repeat the entire content of the PRIMARY CONTEXT.\n"
-    "- The context only to identify what the user is referring to, not as a source of new facts.\n"
-    "- If the cited item is ambiguous or unclear, ask the user for clarification before answering.\n"
-    "- If the main context may be incomplete or uncertain, answer carefully and explain its limitations.\n"
-    "- Prioritize semantic consistency.\n"
+    'Key Follow-up Rules:\n'
+    '- Follow-up mode was applied here.\n'
+    '- This is a direct follow-up to the PRIMARY CONTEXT.\n'
+    '- Only answer specific items or references explicitly requested by the user.\n'
+    '- Do not summarize or repeat the entire content of the PRIMARY CONTEXT.\n'
+    '- The context only to identify what the user is referring to, not as a source of new facts.\n'
+    '- If the cited item is ambiguous or unclear, ask the user for clarification before answering.\n'
+    '- If the main context may be incomplete or uncertain, answer carefully and explain its limitations.\n'
+    '- Prioritize semantic consistency.\n'
 )
 
 # Used in build_context_for_source() when building FILE context block
-FILE_CONTEXT_INSTRUCTION = (
-    "\n\nIMPORTANT: Read and analyze the above file carefully. Use its contents to answer the user's query."
-)
+FILE_CONTEXT_INSTRUCTION = "\n\nIMPORTANT: Read and analyze the above file carefully. Use its contents to answer the user's query."
 
 # Used in build_context_for_source() when building HISTORY context block
-HISTORY_CONTEXT_HEADER = "CONVERSATION HISTORY. "
+HISTORY_CONTEXT_HEADER = 'CONVERSATION HISTORY. '
 
 # Used in build_context_for_source() when building WEB context block
-WEB_CONTEXT_HEADER = "WEB SEARCH RESULTS\nSources: user_query / assistant_context / extracted"
+WEB_CONTEXT_HEADER = 'WEB SEARCH RESULTS\nSources: user_query / assistant_context / extracted'
 
 # Used in build_context_for_source() when building MEMORY context block
-MEMORY_CONTEXT_HEADER = "RELEVANT MEMORIES"
+MEMORY_CONTEXT_HEADER = 'RELEVANT MEMORIES'
 
 # Used in build_context_for_source() when building PRIMARY/FOLLOW-UP context
 PRIMARY_CONTEXT_HEADER = (
-    "PRIMARY CONTEXT — LAST ASSISTANT ANSWER\n"
-    "This is the the current question refers to:"
+    'PRIMARY CONTEXT — LAST ASSISTANT ANSWER\nThis is the the current question refers to:'
 )
 
 # ============================================================

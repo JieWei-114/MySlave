@@ -7,13 +7,10 @@ import logging
 
 from fastapi import APIRouter, HTTPException
 
+from app.config.constants import HTTP_INTERNAL_ERROR
 from app.config.settings import settings
 from app.core.db import rules_collection, sessions_collection
 from app.models.dto import RulesConfig
-
-from app.config.constants import (
-    HTTP_INTERNAL_ERROR
-)
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +21,7 @@ router = APIRouter(prefix='/rules', tags=['rules'])
 async def get_rules():
     """
     Get global default rules that apply to all sessions.
-    
+
     """
     try:
         logger.info('Fetching global rules')
@@ -45,7 +42,7 @@ async def get_rules():
 async def update_rules(rules: RulesConfig):
     """
     Update global default rules.
-    
+
     """
     try:
         rules_dict = rules.model_dump()
@@ -62,7 +59,7 @@ async def update_rules(rules: RulesConfig):
 async def get_session_rules(session_id: str):
     """
     Get rules for a specific session.
-    
+
     """
     try:
         logger.info(f'Fetching session rules for {session_id}')
@@ -85,7 +82,7 @@ async def get_session_rules(session_id: str):
 async def update_session_rules(session_id: str, rules: RulesConfig):
     """
     Update rules for a specific session.
-    
+
     """
     try:
         rules_dict = rules.model_dump()
@@ -119,13 +116,16 @@ async def update_session_rules(session_id: str, rules: RulesConfig):
 
     except Exception as e:
         logger.error(f'Error updating session rules: {e}', exc_info=True)
-        raise HTTPException(status_code=HTTP_INTERNAL_ERROR, detail='Failed to update session rules')
+        raise HTTPException(
+            status_code=HTTP_INTERNAL_ERROR, detail='Failed to update session rules'
+        )
 
-@router.get("/client-config")
+
+@router.get('/client-config')
 def get_client_config():
     """
     Get client-side configuration from backend.
-    
+
     Frontend calls this during app initialization to synchronize settings.
     This ensures frontend file upload limits match backend validation rules.
 
@@ -134,13 +134,12 @@ def get_client_config():
         logger.info('Fetching client config')
         # Sync frontend limits with backend settings
         return {
-            "fileUpload": {
-                "maxSizeMB": settings.FILE_UPLOAD_MAX_SIZE_MB,
-                "allowedBinaryExtensions": settings.FILE_UPLOAD_ALLOWED_EXTENSIONS,
-                "maxExtractChars": settings.FILE_UPLOAD_MAX_CHARS,
+            'fileUpload': {
+                'maxSizeMB': settings.FILE_UPLOAD_MAX_SIZE_MB,
+                'allowedBinaryExtensions': settings.FILE_UPLOAD_ALLOWED_EXTENSIONS,
+                'maxExtractChars': settings.FILE_UPLOAD_MAX_CHARS,
             }
         }
     except Exception as e:
         logger.error(f'Error fetching client config: {e}', exc_info=True)
         raise HTTPException(status_code=HTTP_INTERNAL_ERROR, detail='Failed to fetch client config')
-    

@@ -1,5 +1,5 @@
-""" 
-Defines available models for the chat service 
+"""
+Defines available models for the chat service
 
 """
 

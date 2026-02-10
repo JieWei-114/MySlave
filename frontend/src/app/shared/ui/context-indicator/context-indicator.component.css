@@ -58,7 +58,7 @@
   background: none;
   border: none;
   cursor: pointer;
-  color:white;
+  color: white;
   padding: 0;
   width: 24px;
   height: 24px;
@@ -178,7 +178,7 @@
 .step-action {
   font-size: 10px;
   font-weight: 600;
-  color:white;
+  color: white;
   text-transform: uppercase;
 }
 
