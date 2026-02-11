@@ -1,124 +1,261 @@
-# MySlave – Local AI Assistant Platform (in progress)
+# MySlave – Advanced Local AI Assistant Platform
 
-A fully local, privacy-first AI assistant with advanced conversation management, persistent memory, custom rules, and intelligent web search. Built with **Angular 21 + FastAPI + MongoDB**, combining modern frontend architecture with a powerful, production-ready backend.
+**Your data. Your AI. Your rules.** A production-ready AI assistant platform engineered for privacy, reliability, and transparency. Built on Angular 21 + FastAPI + MongoDB with intelligent multi-source reasoning, real-time streaming, and zero-hallucination architecture.
 
-## Overview
 
-MySlave is a comprehensive AI assistant platform designed for users who demand privacy, control, and customization. Chat with multiple local AI models via Ollama, define custom behavioral rules, maintain conversation memory, and optionally search the web—all while keeping your data completely local.
+## Why MySlave?
 
-### Key Features
+Most AI assistants are black boxes that **invent facts**, **leak your data**, and **hide their reasoning**. MySlave is different:
 
-- **Multi-Model Chat** – Switch between Gemma, Llama, Qwen, Phi, and custom models
-- ** Memory System** – Mark and retrieve important messages for context-aware conversations
-- **Custom Rules** – Define system prompts and behavioral guidelines for AI responses
-- **Web Search** – Integrated search via Serper, Tavily, DuckDuckGo, or local SearXNG
-- **File Upload** – Extract and analyze content from documents (PDFs, DOCX, TXT, etc.)
-- **Real-Time Streaming** – Token-by-token responses with stop-mid-generation control
-- **Modern UI** – Clean, responsive interface with design system and smooth animations
-- **100% Local** – No external services, no telemetry, complete data privacy
+**100% Transparent Decision-Making** — See exactly why the AI answered what it did  
+**Privacy-First Architecture** — Everything runs locally, no telemetry, no cloud dependencies  
+**Anti-Hallucination System** — Multi-layer validation prevents fabricated responses  
+**Real-Time Streaming** — Token-by-token streaming with stop-generation control  
+**Intelligent Context Management** — Multi-source context fusion with confidence tracking  
+**Production-Ready** — Clean architecture, comprehensive error handling, fully typed
 
-## Tech Stack
 
-### Frontend
+## Core Capabilities
 
-- **Framework**: Angular 21.1.0 (standalone components)
-- **State Management**: Angular Signals with computed properties
-- **Styling**: CSS Variables with design system
-- **Real-time Communication**: Server-Sent Events (SSE)
-- **Code Quality**: Prettier for formatting
+### **1. Multi-Source Intelligent Context**
 
-### Backend
+The AI doesn't just answer—it **intelligently assembles context** from multiple sources:
 
-- **Framework**: FastAPI 0.128.0
-- **Database**: MongoDB 4.16+ with connection pooling
-- **LLM Integration**: Ollama (local models)
-- **Streaming**: SSE for real-time responses
-- **Config Management**: Pydantic Settings with .env support
-- **Code Quality**: Ruff for linting and formatting
+#### **File Intelligence**
 
-### Infrastructure
+- **Supported Formats**: PDF, DOCX, TXT, MD, CSV, JSON, YAML, code files
+- **Smart Extraction**: PyPDF2, python-docx, fallback encoding (UTF-8 → Latin-1)
+- **Attachment Persistence**: Files stored in MongoDB with 30-day expiry
+- **Context Injection**: File content automatically prioritized as authoritative source
 
-- **Node.js**: v20.19+ or v22.12+
-- **Python**: 3.10+
-- **MongoDB**: 4.6+ (local, Docker, or cloud)
-- **Docker**: Optional for SearXNG and MongoDB
+#### **Multi-Provider Web Search**
 
-## Features
+- **Providers**: SearXNG (privacy), DuckDuckGo (free), Serper (Google proxy), Tavily (research)
+- **Smart Routing & Fallback Chain**: Auto-detects research queries with graceful degradation
+- **Advance Search Mode**: Distributes queries across all enabled providers, deduplicates results
+- **Quota Tracking**: Real-time monitoring of API limits with automatic provider switching
+- **Result Ranking**: Sentence-based scoring prioritizes most relevant snippets
 
-### Multi-Model Support
+#### **URL Content Extraction**
 
-- Switch between AI models on the fly
-- Models loaded from backend API with intelligent fallback
-- Add new models by editing backend configuration
-- Stream responses in real-time with generation control
+- **Smart Truncation**: Extracts key points for web search enrichment
+- **Source Attribution**: Full URL tracking in metadata
 
-### Modern UI/UX
+#### **Semantic Memory System**
 
-- **Design System**: CSS variables for consistent theming (colors, spacing, shadows)
-- **Smart Components**: Skeleton loaders, error boundaries, empty states
-- **Smooth Animations**: Transitions, typing indicators, scroll effects
-- **Responsive Layout**: Works seamlessly on desktop and tablet screens
-- **Accessibility**: Semantic HTML and keyboard navigation
+- **Embedding-Based Search**: Cosine similarity matching with configurable threshold (0.3 default)
+- **Categorized Storage**: `preference/fact`, `important`, `other`
+- **Auto-Memory**: Automatically saves important exchanges for future context
+- **Confidence Scoring**: Each memory tracks confidence level (0.95 default)
 
-### Chat Features
+#### **Conversation History**
 
-- **Multi-session management** with persistent sidebar navigation
-- **Real-time streaming** with token-by-token display
-- **Stop generation mid-stream** to halt long responses
-- **Message history** with infinite scroll and lazy loading
-- **Session controls**: Rename, delete, and organize conversations
-- **Markdown rendering** with syntax highlighting
-- **File attachments**: Upload and analyze documents in conversations
+- **Configurable Depth**: Default 10 messages, customizable per-session
+- **Follow-Up Mode**: Resolves pronouns/references against previous assistant answer
+- **Smart Truncation**: Per-message character limits prevent context overflow
 
-### Memory System
+### **2. Anti-Hallucination Validation Pipeline (fabricate facts)**
 
-- **Persistent memory panel** with drag-to-resize interface
-- **Mark messages as memorable** for future context retrieval
-- **Smart memory retrieval** using embeddings for semantic search
-- **Context-aware AI responses** informed by retrieved memories
-- **Memory management UI** to review and delete stored memories
-- **Per-session memory isolation** for organized context
+**Solution**: Multi-layer validation and model limitation
 
-### Rules System
+#### **Source Layer Separation**
 
-- **Custom system prompts** to define AI behavior and personality
-- **Pre-configured rule templates** for common use cases
-- **Multiple rules per session** with priority management
-- **Rule library** to save and reuse across conversations
-- **Dynamic rule injection** into AI context
-- **Visual rule management UI** with create/edit/delete operations
+MySlave separates **factual sources** and **contextual sources**:
 
-### Web Search (Optional)
+**Factual (High Confidence)**
 
-- **Multiple search providers**: Serper, Tavily, DuckDuckGo, SearXNG
-- **Smart provider routing** based on keywords and availability
-- **Quota tracking and management** for paid services
-- **Automatic fallback** to local SearXNG when limits reached
-- **Search result extraction** with context formatting
-- **Integrated search UI** with provider selection
+- Files (0.99) — User-uploaded, authoritative
+- Memory (0.85) — Verified past knowledge
+- Web (0.65) — External grounding
 
-### Advanced Features
+**Contextual (Supporting Only)**
 
-- **Connection Pooling**: Optimized MongoDB connections for performance
-- **Professional Error Handling**: User-friendly error display with retry options
-- **Computed Signals**: Fine-grained reactivity with minimal rerenders
-- **SSR Compatible**: Server-side rendering support with browser API guards
-- **Environment Configuration**: .env support for easy deployment
-- **API Documentation**: Auto-generated OpenAPI/Swagger docs
+- History (0.0) — Continuity, not facts
+- Follow-Up (0.0) — Reference resolution
+
+**Why this matters**: The AI **cannot cite conversation history as a fact source**. It must draw facts from verifiable sources.
+
+#### **Entity Validation Service**
+
+**Dual-Mode Extraction**:
+
+1. **NLP Mode** (spaCy): Extracts PERSON, ORG, GPE, DATE, MONEY, etc.
+2. **Pattern Mode** (Fallback): Regex-based with intelligent common-word filtering
+
+**Strategy Fuzzy Matching**:
+
+- **Exact Match**: Direct substring matching
+- **Partial Match**: Lower-case fuzzy matching
+- **Stem Match**: Handles plurals/tenses ("company" ↔ "companies")
+- **Acronym Expansion**: "FBI" ↔ "Federal Bureau Investigation"
+
+**Factual Guard**
+
+- Risk Levels:
+- HIGH: 6+ Unverified entities → Cap confidence to 0.4
+- MED: 3-5 Unverified entities → Cap confidence to 0.5
+- LOW: <3 Unverified entities → Cap confidence to 0.6
+- NONE: All entities verified → No cap
+
+#### **Source Conflict Detection**: 
+
+- Identifies contradictions between information sources
+
+#### **Reasoning Veto System**  (Shows why answers were refused or confidence capped)
+
+**Hard Vetoes** 
+
+- "cannot confirm", "no reliable source", "conflicting sources"
+- "no access to", "not covered in context", "outside my knowledge"
+
+**Soft Vetoes** 
+
+- "uncertain", "speculative", "probably", "assuming", "might"
+- "not sure", "unclear", "low confidence"
+
+#### **Confidence Calculation**
+
+```
+Initial Confidence (from source type) : 85%
+    ↓
+Hard Veto? → REFUSE ANSWER
+Soft Veto? → Cap at 0.6
+    ↓
+Factual Guard (unverified entities)? → Cap by risk level
+    ↓
+Final Confidence
+```
+
+All stages tracked in metadata for full transparency.
+
+### **3. Streaming Architecture**
+
+**Real-Time Event Streaming** via Server-Sent Events (SSE):
+
+```typescript
+Event Types:
+├─ token             // Final answer generation
+├─ reasoning_token   // AI's thinking process generation
+├─ metadata          // Confidence, sources, validation results
+├─ done              // Stream complete
+└─ error             // Error with recovery suggestions
+```
+
+**Benefits**:
+
+- Token-by-token rendering for perceived speed
+- Stop-generation control (user can interrupt)
+- Transparent reasoning display (see AI's thought process)
+
+
+### **4. Centralized Configuration System**
+
+**Single Source of Truth**: All limits defined in [`settings.py`](backend/app/config/settings.py)
+
+```python
+# Example: Web search limits
+WEB_SEARCH_RESULTS_PER_PROVIDER: int = 10
+CHAT_WEB_SNIPPET_MAX_CHARS: int = 800
+CHAT_WEB_TOTAL_MAX_CHARS: int = 6000
+
+# Memory limits
+MEMORY_SEARCH_LIMIT: int = 10
+MEMORY_SEARCH_THRESHOLD: float = 0.3
+
+# Confidence levels
+CONFIDENCE_FILE: float = 0.99
+CONFIDENCE_MEMORY: float = 0.85
+CONFIDENCE_WEB: float = 0.65
+```
+
+**No magic numbers in code** — everything configurable via environment variables.
+
+
+### **5. Custom Rules Engine**
+
+Per-session:
+
+```json
+{
+   "searxng": true,
+   "duckduckgo": true,
+   "tavily": false,
+   "serper": false,
+   "advanceSearch": false,
+   "followUpEnabled": true,
+   "reasoningEnabled": false,
+   "customInstructions": "You are a Python expert...",
+   "webSearchLimit": 10,
+   "memorySearchLimit": 10,
+   "historyLimit": 10
+}
+```
+
+**Use Cases**:
+
+- Define AI behavior and personality via system prompts
+- Pre-configured rule templates for common use cases
+- Multiple rules per session with priority management
+- Dynamic rule injection into AI context
+- Disable web search for sensitive conversations
+- Enable reasoning mode for complex problem-solving
+- Custom system instructions per session (personality, expertise)
+
+### **6. Modern UI/UX**
+
+- Clean, responsive design with CSS design system
+- Skeleton loaders and smooth animations
+- Collapsible reasoning/validation panels
+- Color-coded confidence and risk indicators
+- Real-time typing indicators
+- Displays comprehensive metadata for each AI response
+
+
+## Technical Stack
+
+### **Backend**
+
+- **FastAPI** 0.128.0 — Async-first, type-safe REST API
+- **MongoDB** 4.16+ — Document database with Motor async driver
+- **Ollama** — Local LLM inference
+- **spaCy** 3.7+ — NLP for entity extraction (optional, graceful fallback)
+- **Pydantic** v2 — Strict data validation
+- **PyPDF2** — PDF text extraction
+- **Streaming**: Server-Sent Events (SSE)
+- **python-docx** — DOCX text extraction
+
+### **Frontend**
+
+- **Angular** 21.1.0 — Standalone components
+- **Vite** — Fast build tool
+- **Signal-based State** — Signal-based reactive state management (no RxJS)
+- **EventSource** — SSE for real-time streaming
+- **Marked.js** — Markdown rendering
+- **Styling**: CSS Variables design system
+- **Build**: Angular CLI with SSR support
+
+### **Infrastructure**
+
+- **Node.js** 20+ / **Python** 3.10+
+- **MongoDB** 4.6+ (local/Docker/cloud)
+- **Docker** (for MongoDB + SearXNG)
 
 ## Quick Start
 
-### Prerequisites
+### **1. Prerequisites**
 
-- **Node.js**: v20.19+ or v22.12+
-- **Python**: 3.10+
-- **MongoDB**: 4.6+ (local, Docker, or cloud)
-- **Ollama**: For local LLM inference ([Download](https://ollama.ai))
-- **Git**: For cloning the repository (optional)
+```bash
+# Check versions
+node --version    # v20.19+ or v22.12+
+python --version  # 3.10+
+mongod --version  # 4.6+
 
-### Setup
+# Install Ollama (https://ollama.ai)
+ollama pull llama2:7b
+ollama pull [model]
+```
 
-### Backend Setup
+### **2. Backend Setup**
 
 ```bash
 cd backend
@@ -128,52 +265,29 @@ rm -rf venv
 find . -type d -name "__pycache__" -exec rm -rf {} +
 find . -type f -name "*.pyc" -delete
 
-# Create and activate virtual environment
+# Create virtual environment
 python -m venv venv
-source venv/bin/activate   # Windows: venv\Scripts\activate
+source venv/bin/activate  # Windows: venv/Scripts/activate
 
 # Install dependencies
-python -m pip install -r requirements.txt
+pip install -r requirements.txt
 
-# Start development server
-python -m uvicorn app.main:app --reload
+# Install spaCy for NLP entity extraction (Python 3.10-3.13 only)
+pip install spacy
+python -m spacy download en_core_web_sm
+
+# Create .env
+cp .env.example .env
+Edit .env with your settings
+
+# Start server
+uvicorn app.main:app --reload
 ```
 
-**Backend URL**: http://127.0.0.1:8000  
+**API**: http://127.0.0.1:8000  
 **API Docs**: http://127.0.0.1:8000/docs
 
-### Database Setup
-
-Choose one option:
-
-**Option 1: MongoDB Service (Windows)**
-
-```powershell
-Get-Service | ? Name -like 'MongoDB*'
-Start-Service MongoDB
-```
-
-**Option 2: Manual Start (Windows)**
-
-```bash
-mkdir C:\data\db
-"C:\Program Files\MongoDB\Server\7.0\bin\mongod.exe" --dbpath "C:\data\db"
-```
-
-**Option 3: Docker**
-
-```bash
-docker run -d --name mongo -p 27017:27017 -v C:\data\db:/data/db mongo:7
-```
-
-**Collections Created Automatically**:
-
-- `sessions`: Chat session metadata
-- `memories`: Stored memories per session
-- `serper_quota`: Serper API usage counter
-- `tavily_quota`: Tavily API monthly usage counter
-
-### Frontend Setup
+### **3. Frontend Setup**
 
 ```bash
 cd frontend
@@ -183,308 +297,346 @@ rm -rf node_modules .angular package-lock.json
 npm cache clean --force
 
 # Install dependencies
-npm install # --verbose /to see logs
+npm install
 
 # Start development server
-npx ng serve
+npx ng serve # --verbose /to see logs
 ```
 
 **Frontend URL**: http://localhost:4200
 
-### Ollama Setup
+### **4. Database Setup**
 
-```bash
-# Install from https://ollama.ai
+**Option A: MongoDB Service (Windows)**
 
-# Pull desired models
-ollama pull gemma:7b
-ollama pull llama2:7b
-
-# Verify Ollama is running
-curl http://localhost:11434/api/tags
+```powershell
+Start-Service MongoDB
 ```
 
-### Optional: Local Web Search (SearXNG)
+**Option B: Docker**
+
+```bash
+docker run -d --name mongo -p 27017:27017 -v C:\data\db:/data/db mongo:7
+```
+
+**Option C: Manual Start**
+
+```bash
+mongod --dbpath /data/db
+```
+
+### **5. Local Web Search (SearXNG)**
 
 ```bash
 cd searxng
 
-# Edit settings.yml and set a strong secret
-# server.secret_key: "your-32-character-random-string"
-docker --version
-
-docker info
+# Edit settings.yml - set a strong secret_key
 docker compose up -d
-docker ps
-docker compose logs -f
 ```
 
 **SearXNG URL**: http://localhost:8080
 
-## Configuration Guide
+## Configuration
 
-### Backend Environment Variables
+### **Backend Environment (.env)**
 
-Create `.env` in `backend/` directory:
-
+Create `backend/.env`:
 ```env
-# MongoDB Configuration
+# MongoDB
 MONGO_URI=mongodb://127.0.0.1:27017
 DB_NAME=myslave
 
-# Ollama Configuration
+# Ollama
 OLLAMA_URL=http://localhost:11434
+OLLAMA_TIMEOUT=120
 
-# CORS Settings
-CORS_ORIGINS=["http://localhost:4200","http://127.0.0.1:4200"]
+# CORS
+CORS_ORIGINS=["http://localhost:4200"]
 
-# Web Search API Keys (Optional)
-SERPER_API_KEY=your_serper_api_key_here
-TAVILY_API_KEY=your_tavily_api_key_here
+# Web Search (Optional)
+SERPER_API_KEY=your_serper_key
+TAVILY_API_KEY=your_tavily_key
 SEARXNG_URL=http://localhost:8080
 
-# Search Quotas
+# Quotas
 SERPER_TOTAL_LIMIT=2500
 TAVILY_MONTHLY_LIMIT=1000
+
+# Logging
+LOG_LEVEL=INFO  # DEBUG for development
 ```
 
-### Customizing AI Models
+### **AI Models Configuration**
 
-Edit [backend/app/config/ai_models.py](backend/app/config/ai_models.py):
-
+Edit `backend/app/config/ai_models.py`:
 ```python
 AVAILABLE_MODELS = [
     {
-        "id": "gemma:7b",
-        "name": "Gemma 7B",
-        "description": "Google's efficient language model",
-        "size": "7B",
-        "context_length": 8192
-    },
-    {
         "id": "llama2:13b",
         "name": "Llama 2 13B",
-        "description": "Meta's powerful open model",
-        "size": "13B",
+        "description": "Powerful reasoning",
         "context_length": 4096
     },
-    # Add your custom models here
+    # Add custom models
 ]
 ```
 
-### Adding Web Search Providers
+## 🛠️ Development
 
-Create new provider in [backend/app/config/web_providers/](backend/app/config/web_providers/):
+### **Backend Development**
 
-```python
-from .base import WebSearchProvider
-
-class CustomProvider(WebSearchProvider):
-    async def search(self, query: str) -> dict:
-        # Implement your search logic
-        pass
-```
-
-Register in [backend/app/services/web_search_service.py](backend/app/services/web_search_service.py).
-
-## Development
-
-### Frontend Development
-
-**Run Development Server**
-
-```bash
-cd frontend
-npx ng serve
-# Access at http://localhost:4200
-```
-
-**Build for Production**
-
-```bash
-npm run build
-# Output in frontend/dist/
-```
+- Backend: Ruff for linting/formatting
 
 **Code Quality**
-
-```bash
-# Format code with Prettier
-npm run format:check  # Check formatting
-npm run format:fix    # Auto-fix formatting
-
-# Lint code
-npx ng lint
-```
-
-**Testing**
-
-```bash
-npm test              # Run unit tests
-npm run test:coverage # Generate coverage report
-```
-
-### Backend Development
-
-**Run Development Server**
 
 ```bash
 cd backend
-source venv/bin/activate  # Windows: venv\Scripts\activate
-python -m uvicorn app.main:app --reload
-# Access at http://127.0.0.1:8000
-```
 
-**Code Quality**
-
-```bash
-# Lint with Ruff
+# Lint and format with Ruff
 ruff check --fix .
-
-# Format code
 ruff format .
-
-# Run all checks
-ruff check . && ruff format .
 ```
 
 **Testing**
 
 ```bash
-pytest                    # Run all tests
-pytest --cov=app         # With coverage
-pytest -v tests/         # Verbose output
+pytest
+pytest --cov=app
+pytest -v tests/....
+pytest -v
 ```
 
-## Privacy & Security
+### **Frontend Development**
 
-**MySlave is 100% local by design:**
+- Frontend: Prettier + ESLint
 
-- No cloud services or external dependencies (except optional web search)
-- No telemetry, tracking, or analytics
-- No data uploads to third-party servers
-- All conversations stored locally in MongoDB
-- Ollama models run entirely on your machine
-- Full control over your data and AI interactions
+**Code Quality**
 
-**Optional External Services:**
+```bash
+cd frontend
 
-- Web search providers (Serper, Tavily) – Only when explicitly used
-- SearXNG & DuckDuckGo– Self-hosted, fully local alternative
+# Format with Prettier
+npm run format:check
+npm run format:fix
 
-**Security Best Practices:**
+# Linting (ESLint)
+ng eslint src --fix
+```
 
-- Use HTTPS with reverse proxy (nginx, Caddy)
-- Configure firewall rules if exposing to network
-- Set strong `secret_key` for SearXNG
+**Testing**
+
+```bash
+npm test
+npm run test:coverage
+```
 
 ## Troubleshooting
 
-### Models Not Loading
+### **MongoDB Connection Failed**
 
 ```bash
-# Check backend health
-curl http://127.0.0.1:8000/health
-
-# Check Ollama is running
-curl http://localhost:11434/api/tags
-
-# Pull a model
-ollama pull gemma:7b
-
-# Restart backend
-python -m uvicorn app.main:app --reload
-```
-
-### Frontend Won't Connect
-
-- Verify backend is running on port 8000
-- Check browser console for errors (F12)
-- Clear browser cache and reload (Ctrl+Shift+R)
-- Ensure CORS_ORIGINS includes `http://localhost:4200`
-
-### Database Connection Issues
-
-```bash
-# Check MongoDB is running
+# Check MongoDB running
 mongosh --eval "db.adminCommand('ping')"
 
 # Verify connection string in settings
 # Default: mongodb://127.0.0.1:27017
 
+# Start MongoDB service
+Start-Service MongoDB  # Windows
+sudo systemctl start mongod  # Linux
+
+# Or use Docker
+docker start mongo
+
 # Create database (auto-created on first run)
 mongosh myslave
 ```
 
-### Memory Issues
-
-- Start with smaller models (7B parameters)
-- Increase system RAM if running multiple services
-- Monitor with Task Manager or `top` command
-- Consider using quantized model variants
-
-### Web Search Not Working
-
-- Verify API keys are set correctly
-- Check SearXNG is running if using local search
-- Review quotas in MongoDB: `serper_quota`, `tavily_quota`
-- Check backend logs for API errors
-
-### File Upload Issues
-
-- Verify file extraction service is configured
-- Check supported formats: PDF, DOCX, TXT, MD, CSV
-- Review file size limits in backend configuration
-
-## Additional Resources
-
-- **Interactive API Docs**: http://127.0.0.1:8000/docs (Swagger UI)
-- **Alternative API Docs**: http://127.0.0.1:8000/redoc (ReDoc)
-
-## Acknowledgments
-
-Built with incredible open-source projects:
-
-- [Ollama](https://ollama.ai) – Local LLM inference engine
-- [Angular](https://angular.dev) – Modern web framework
-- [FastAPI](https://fastapi.tiangolo.com) – High-performance Python framework
-- [MongoDB](https://www.mongodb.com) – Flexible document database
-- [SearXNG](https://docs.searxng.org) – Privacy-respecting metasearch engine
-
-## FAQ
-
-**Q: Will my conversations be sent to external servers?**  
-A: No. MySlave is 100% local. Optional web search is the only external component, and you can disable it or use the local SearXNG version.
-
-**Q: How much RAM do I need?**  
-A: Minimum 8GB recommended. Model memory usage varies:
-
-- 7B models: ~6-8GB RAM
-- 13B models: ~10-12GB RAM
-- 33B+ models: 20GB+ RAM
-- Multiple services running: 16GB+ recommended
-
-**Q: Can I use different AI models?**  
-A: Yes! Any Ollama-compatible model works. Pull models with `ollama pull <model>` and add them to [backend/app/config/ai_models.py](backend/app/config/ai_models.py).
-
-**Q: How do I backup my conversations?**  
-A: Use MongoDB backup tools:
+### **Ollama Not Responding**
 
 ```bash
-mongodump --db myslave --out backup/
-mongorestore --db myslave backup/myslave/
+# Check Ollama running
+curl http://localhost:11434/api/tags
+
+# Start Ollama
+ollama serve
+
+# Pull missing models
+ollama pull gemma:7b
 ```
 
-**Q: Can I deploy this to a server?**  
-A: Yes, but ensure proper security:
+### **Web search no results**
 
-- Enable authentication
-- Use HTTPS (reverse proxy with nginx/Caddy)
-- Configure firewall rules
-- Set strong MongoDB passwords
-- Update CORS settings in backend
+- Check SearXNG is running if using local search
+- Review quotas in: serper_quota, tavily_quota
+- Check backend logs for API errors
+- Check provider settings in Rules UI. Verify API keys in `.env` are set correctly.
 
-**Q: Does this work offline?**  
-A: Yes! Everything except web search works completely offline. For offline search, use SearXNG.
+### **Entity extraction errors**
+
+```bash
+# Install spaCy: 
+pip install spacy 
+python -m spacy download en_core_web_sm
+```
+
+## Privacy & Security
+
+### **Privacy Guarantees**
+
+**100% Local Processing**: All AI inference runs on your machine  
+**No Telemetry**: Zero tracking, analytics, or data collection  
+**Local Data Storage**: All conversations stay in your MongoDB  
+**No Cloud Dependencies**: Works completely offline (except optional web search)  
+**Optional Web** — Serper/Tavily only when you enable/trigger search  
+**Open Source**: Full code transparency, audit at any time
+**No Third-Party CDNs** — All assets bundled
+
+### **External Services**
+
+**Web Search Providers** (Serper, Tavily):
+- Only used when explicitly requested
+- Can be disabled in settings
+- Local alternative: SearXNG (fully private)
+
+### **Security Best Practices**
+
+1. **MongoDB**
+
+```bash
+# Enable MongoDB authentication
+mongod --auth --bind_ip 127.0.0.1
+# Set strong MongoDB passwords
+```
+
+2. **Reverse Proxy** (Nginx/Caddy)
+
+```nginx
+# Use HTTPS with reverse proxy (nginx/Caddy)
+location /api {
+    proxy_pass http://127.0.0.1:8000;
+}
+```
+
+3. **Firewall Rules**
+
+```bash
+ufw allow 4200/tcp  # Frontend
+ufw allow 8000/tcp  # Backend (localhost only recommended)
+```
+
+4. **CORS Restrictions**
+
+```env
+CORS_ORIGINS=["http://localhost:4200"]  # Whitelist only
+```
+
+5. **Set strong `secret_key` for SearXNG**
+
+```
+<random 32-64 chars>
+```
+
+6. **Update dependencies regularly**
+
+## 📈 Performance
+
+### **System Requirements**
+
+**Minimum**:
+
+- 8GB RAM
+- 4-core CPU
+- 20GB disk space
+- MongoDB 4.6+
+
+**Recommended**:
+
+- 16GB+ RAM (for larger models)
+- 8-core CPU
+- SSD for MongoDB
+- GPU for faster inference (optional)
+
+### **Model Memory Usage**
+
+- 7B parameters: ~6-8GB RAM
+- 13B parameters: ~10-12GB RAM
+- 33B+ parameters: 20GB+ RAM
+
+### **Optimizations**
+
+- MongoDB connection pooling
+- Async I/O throughout
+- Efficient embedding caching
+- Lazy loading in frontend
+- SSE streaming reduces memory
+- Signal-based reactivity (minimal rerenders)
+- Configure Ollama GPU acceleration (CUDA/ROCm)
+- Limit concurrent sessions (1-3 for 7B models on 8GB RAM)
+
+## Documentation
+
+- **Swagger UI**: http://127.0.0.1:8000/docs
+- **ReDoc**: http://127.0.0.1:8000/redoc
+- **README**: files in major directories
 
 ---
+
+## Contributing
+
+Built with best-in-class open-source tools:
+
+- [**Ollama**](https://ollama.ai) — Local LLM inference engine
+- [**FastAPI**](https://fastapi.tiangolo.com) — Modern Python web framework
+- [**Angular**](https://angular.dev) — Enterprise web framework
+- [**MongoDB**](https://www.mongodb.com) — Document database
+- [**spaCy**](https://spacy.io) — Industrial-strength NLP
+- [**SearXNG**](https://docs.searxng.org) — Privacy-respecting metasearch
+
+---
+
+
+## FAQ 
+
+**Q: Is my data truly private?**  
+A: Yes. All LLM inference runs locally via Ollama. Web search is optional and only triggers when you enable it. MongoDB is local. Zero telemetry.
+
+**Q: Do I need a GPU?**  
+A: No, but it helps. Ollama works on CPU, just slower.
+
+**Q: Can I use custom models?**  
+A: Yes! Any Ollama-compatible model. Add to `ai_models.py`.
+
+**Q: Why is reasoning separate from answer?**  
+A: Separating internal thoughts from user-facing response improves quality and enables validation.
+
+**Q: What's the veto system?**  
+A: AI checks its own reasoning. If it said "cannot confirm" internally but generated a confident answer externally, veto system catches this inconsistency.
+
+**Q: How does entity validation work?**  
+A: Extracts names/places from answer, checks if they appear in source documents. Flags unverified entities.
+
+**Q: Why fuzzy matching?**  
+A: Exact matching fails on plurals ("APIs" vs "API"), partial phrases ("John Smith" in "Dr. John Smith"), etc.
+
+**Q: How does follow-up mode work?**  
+A: When enabled, the AI treats the **previous assistant answer** as the **primary context**. Pronouns/references resolve against it first, then fall back to conversation history.
+
+**Q: Do I need spaCy?**  
+A: Recommended. System falls back to pattern-based extraction.
+
+## Roadmap
+
+### **Planned Features**
+1. Plugin system for custom model providers
+2. Docker Compose (Single-command Docker startup)
+3. Vector database abstraction layer (Qdrant / Weaviate support)
+4. Collaborative sessions (shared conversations)
+5. Prompt preset / lightweight fine-tuning interface
+6. Voice input & output
+7. Advanced RAG (Graph-enhanced retrieval / GraphRAG - experimental)
+8. Kubernetes deployment configs
+
+---
+
+**Built with ❤️ for privacy-conscious developers**
