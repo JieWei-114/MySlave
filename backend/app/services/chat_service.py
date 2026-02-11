@@ -16,7 +16,14 @@ from app.config.prompt_templates import (
 from app.config.settings import settings
 from app.core.db import sessions_collection
 from app.models.dto import ContextSource
-from app.services.chat_session_service import get_session, get_session_rules
+from app.services.chat_session_service import (
+    get_session, 
+    get_session_rules, 
+    create_session, 
+    delete_session, 
+    list_sessions, 
+    rename_session,
+    )
 from app.services.context_builder_service import (
     calculate_weighted_confidence,
     extract_file_content,
@@ -92,9 +99,6 @@ TEXT_MIN_LENGTH = settings.TEXT_MIN_LENGTH_FOR_PROCESSING
 TEXT_MIN_SENTENCE_LENGTH = settings.TEXT_MIN_SENTENCE_LENGTH
 QUERY_TRUNCATION_LIMIT = settings.TEXT_QUERY_TRUNCATION_LIMIT
 REASONING_TRUNCATION_LIMIT = settings.TEXT_REASONING_TRUNCATION_LIMIT
-
-# Import session CRUD functions
-
 
 # ════════════════════════════════════════════════════════════════════════
 # HELPER FUNCTIONS - Supporting Utilities
