@@ -9,7 +9,9 @@
     "test": "ng test",
     "serve:ssr:frontend": "node dist/frontend/server/server.mjs",
     "format:check": "prettier --check \"src/**/*.{ts,html,css,scss}\"",
-    "format:fix": "prettier --write \"src/**/*.{ts,html,css,scss}\""
+    "format:fix": "prettier --write \"src/**/*.{ts,html,css,scss}\"",
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix"
   },
   "prettier": {
     "printWidth": 100,
@@ -49,6 +51,10 @@
     "jsdom": "^27.1.0",
     "prettier": "^3.8.0",
     "typescript": "~5.9.2",
-    "vitest": "^4.0.8"
+    "vitest": "^4.0.8",
+    "@typescript-eslint/eslint-plugin": "^8.19.1",
+    "@typescript-eslint/parser": "^8.19.1",
+    "eslint": "^9.18.0",
+    "typescript-eslint": "^8.19.1"
   }
 }

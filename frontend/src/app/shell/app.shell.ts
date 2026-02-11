@@ -20,7 +20,7 @@ export class AppShell implements AfterViewInit {
   constructor(
     public store: ChatStore,
     private router: Router,
-    @Inject(PLATFORM_ID) private platformId: Object,
+    @Inject(PLATFORM_ID) private platformId: object,
   ) {
     this.store.loadSessions();
   }

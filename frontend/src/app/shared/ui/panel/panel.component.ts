@@ -39,7 +39,7 @@ export class PanelComponent implements AfterViewInit {
 
   constructor(
     private elementRef: ElementRef,
-    @Inject(PLATFORM_ID) private platformId: Object,
+    @Inject(PLATFORM_ID) private platformId: object,
   ) {}
 
   ngAfterViewInit(): void {

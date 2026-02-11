@@ -27,10 +27,10 @@ export class MemoryPage {
   newMemory = '';
   newCategory: 'preference_or_fact' | 'important' | 'other' = 'preference_or_fact';
 
-  readonly categoryOptions: Array<{
+  readonly categoryOptions: {
     value: 'preference_or_fact' | 'important' | 'other';
     label: string;
-  }> = [
+  }[] = [
     { value: 'preference_or_fact', label: 'Preference/Fact' },
     { value: 'important', label: 'Important' },
     { value: 'other', label: 'Other' },

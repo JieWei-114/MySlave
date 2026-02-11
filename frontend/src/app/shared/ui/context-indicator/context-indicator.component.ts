@@ -47,7 +47,7 @@ export class ContextIndicatorComponent {
   }
 
   getSourcesArray(
-    sources: { [key: string]: number } | undefined,
+    sources: Record<string, number> | undefined,
   ): { source: string; score: number }[] {
     if (!sources) return [];
     return Object.entries(sources).map(([source, score]) => ({ source, score }));
@@ -123,7 +123,7 @@ export class ContextIndicatorComponent {
   formatAction(action: string): string {
     if (!action) return 'Unknown';
     const formatted = action.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
-    const actionMap: { [key: string]: string } = {
+    const actionMap: Record<string, string> = {
       'Search Web': 'Search the web for more information',
       'Ask User': 'Ask the user for clarification',
       'Use History': 'Refer to conversation history',

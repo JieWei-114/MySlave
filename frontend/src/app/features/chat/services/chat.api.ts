@@ -81,9 +81,9 @@ export class ChatApi {
     onDone: () => void,
     onMetadata?: (meta: any) => void,
     onVerification?: (status: { type: string; data?: any }) => void,
-    reasoningEnabled: boolean = false,
+    reasoningEnabled = false,
   ): () => void {
-    let url =
+    const url =
       `${this.config.apiBaseUrl}/chat/${sessionId}/stream` +
       `?content=${encodeURIComponent(content)}` +
       `&model=${encodeURIComponent(model)}` +

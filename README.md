@@ -159,10 +159,6 @@ WEB_SEARCH_RESULTS_PER_PROVIDER: int = 10
 CHAT_WEB_SNIPPET_MAX_CHARS: int = 800
 CHAT_WEB_TOTAL_MAX_CHARS: int = 6000
 
-# Memory limits
-MEMORY_SEARCH_LIMIT: int = 10
-MEMORY_SEARCH_THRESHOLD: float = 0.3
-
 # Confidence levels
 CONFIDENCE_FILE: float = 0.99
 CONFIDENCE_MEMORY: float = 0.85
@@ -242,6 +238,269 @@ Per-session:
 - **Docker** (for MongoDB + SearXNG)
 
 ## Quick Start
+
+### **Docker One-Command Startup (Still in Progress)**
+**Zero host dependencies.** Everything runs in containers — no heavy installation required on your machine.
+
+#### **What You Need on Your Computer**
+1. **Docker Desktop** (Windows/Mac) or **Docker Engine + Docker Compose** (Linux)
+   - Windows: [Download Docker Desktop](https://docs.docker.com/desktop/install/windows-install/)
+   - Mac: [Download Docker Desktop](https://docs.docker.com/desktop/install/mac-install/)
+   - Linux: [Install Docker Engine](https://docs.docker.com/engine/install/) + [Docker Compose](https://docs.docker.com/compose/install/)
+
+2. **(Optional) NVIDIA GPU Support**
+   - Windows/Linux with NVIDIA GPU: [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)
+
+#### **Step-by-Step First-Time Setup**
+
+**Step 1: Choose Your Profile**
+
+Pick the frontend + backend + Ollama combination that fits your use case:
+
+```
+Profile                    Frontend                 Backend             Ollama  Use Case       
+-------------------------  -----------------------  ------------------  ------  -------------- 
+`dev` + `ollama-cpu`       `ng serve` (hot reload)  `uvicorn --reload`  CPU     Development    
+`prod-spa` + `ollama-cpu`  Static (Nginx)           Production          CPU     Production SPA 
+`prod-ssr` + `ollama-cpu`  SSR (Node)               Production          CPU     Production SSR 
+`dev` + `ollama-gpu`       `ng serve`               `uvicorn --reload`  GPU     Dev with GPU   
+`prod-spa` + `ollama-gpu`  Static (Nginx)           Production          GPU     Prod SPA + GPU 
+```
+
+**Step 2: Start All Services**
+
+Open a terminal in the project root directory and run:
+
+**Production SPA (Recommended for First-Time Users)**
+
+```bash
+# find where the project is located
+cd ~/MySlave
+```
+
+```bash
+docker compose --profile prod-spa --profile ollama-cpu up --build
+```
+
+**Development Mode (Hot Reload)**
+
+```bash
+docker compose --profile dev --profile ollama-cpu up --build
+```
+
+**Production SSR**
+
+```bash
+docker compose --profile prod-ssr --profile ollama-cpu up --build
+```
+
+**With NVIDIA GPU** (requires NVIDIA Container Toolkit)
+
+```bash
+# Dev with GPU
+OLLAMA_URL=http://ollama-gpu:11434 docker compose --profile dev --profile ollama-gpu up --build
+
+# Prod SPA with GPU
+OLLAMA_URL=http://ollama-gpu:11434 docker compose --profile prod-spa --profile ollama-gpu up --build
+```
+
+**Windows PowerShell** (GPU example)
+
+```powershell
+$env:OLLAMA_URL="http://ollama-gpu:11434"; docker compose --profile prod-spa --profile ollama-gpu up --build
+```
+
+---
+
+**Step 3: Wait for Build & Startup**
+
+First-time startup will take **5-15 minutes** depending on your internet speed:
+
+- Downloads base images (Python, Node, MongoDB, Nginx, Ollama)
+- Installs Python dependencies (FastAPI, spaCy, PyPDF2, etc.)
+- Downloads spaCy NLP model (`en_core_web_sm`)
+- Installs Node dependencies (Angular, etc.)
+- Builds frontend (dev: skipped, prod: full build)
+
+Watch for these success indicators in logs:
+
+```
+mongo       - Waiting for connections on port 27017
+searxng     - [uwsgi] spawned uWSGI worker
+backend     - INFO:     Application startup complete
+ollama      - Listening...
+frontend    - Compiled successfully
+```
+
+
+**Step 4: Pull an Ollama Model**
+The Ollama container is running but **has no models yet**. Pull one:
+
+```bash
+# Enter the Ollama container
+docker exec -it myslave-ollama-1 bash
+
+# Inside container: Pull a model (choose one)
+ollama pull qwen2.5:14b
+ollama pull [model]
+
+# Exit container
+exit
+```
+
+**Alternative: Pull from host** (if Ollama container name is different)
+
+```bash
+docker exec -it <ollama-container-name> ollama pull llama3.2:3b
+# Find container name:
+
+docker ps | grep ollama
+```
+
+**Step 5: Access the Application**
+
+Open your browser:
+
+```
+Service             URL                          Description           
+------------------  ---------------------------  --------------------- 
+**Frontend (SPA)**  http://localhost:4173        Main UI (prod SPA)    
+**Frontend (SSR)**  http://localhost:4000        Main UI (prod SSR)    
+**Frontend (Dev)**  http://localhost:4200        Main UI (dev mode)    
+**Backend API**     http://localhost:8000/docs   FastAPI Swagger UI    
+**SearXNG**         http://localhost:8080        Private search engine 
+**MongoDB**         `mongodb://localhost:27017`  Database (direct)     
+**Ollama**          http://localhost:11434       LLM API               
+```
+
+**Step 6: Verify Everything Works**
+
+1. **Check API Health**
+
+```bash
+curl http://localhost:8000/health
+```
+
+Expected response:
+
+```json
+{ "status": "healthy", "database": "connected", "version": "1.0.0" }
+```
+
+2. **Check Ollama Models**
+
+```bash
+curl http://localhost:11434/api/tags
+```
+
+3. **Open the Frontend**  
+
+Navigate to http://localhost:4173 (or 4000/4200 depending on profile).  
+Create a chat session and test a message.
+
+#### **Common Commands**
+
+**Stop all services**
+```bash
+docker compose --profile prod-spa --profile ollama-cpu down
+```
+
+**Restart services** (without rebuild)
+```bash
+docker compose --profile prod-spa --profile ollama-cpu up
+```
+
+**Rebuild after code changes**
+```bash
+docker compose --profile prod-spa --profile ollama-cpu up --build
+```
+
+**View logs**
+```bash
+docker compose logs -f backend
+docker compose logs -f frontend-spa
+docker compose logs -f ollama
+```
+
+**Clean up (remove volumes, fresh start)**
+```bash
+docker compose down -v
+```
+
+#### **Data Persistence**
+
+All data persists in Docker named volumes:
+
+- `mongo_data`: MongoDB database (conversations, memories, rules)
+- `ollama_data`: Ollama models (multi-GB, survives restarts)
+
+Even after `docker compose down`, your data remains. To delete:
+
+```bash
+docker volume rm myslave_mongo_data myslave_ollama_data
+```
+
+#### **Troubleshooting**
+
+**Port already in use**
+
+```bash
+# Check what's using port 4173 (or 8000, 11434, etc.)
+# Windows
+netstat -ano | findstr :4173
+
+# Linux/Mac
+lsof -i :4173
+
+# Kill the process or change the port in docker-compose.yml
+```
+
+**Ollama GPU not working**
+
+```bash
+# Verify NVIDIA Docker runtime
+docker run --rm --gpus all nvidia/cuda:12.0.0-base-ubuntu22.04 nvidia-smi
+
+# If this fails, NVIDIA Container Toolkit isn't installed correctly
+```
+
+**Backend can't connect to MongoDB**
+- Wait 10-20 seconds after `docker compose up` for MongoDB to initialize
+- Check logs: `docker compose logs mongo`
+
+**First build is slow**
+- Normal. Subsequent builds use Docker layer cache (much faster)
+- Use `--build` only when you change code
+
+---
+
+#### **API Keys**
+
+To enable paid web search providers (Serper, Tavily)
+
+**Skip this step** if you only ant to use free providers (DuckDuckgo, SearXNG), create a `.env`
+
+- Register your account to get our API key
+**SerperDev** - (https://serper.dev/)
+**Tavily** - (https://www.tavily.com/)
+
+```bash
+# Copy the example file
+cp .env.example .env
+
+# Edit .env and add your API keys
+SERPER_API_KEY=your_serper_api_key_here
+TAVILY_API_KEY=your_tavily_api_key_here
+```
+
+**Then restart**:
+
+```bash
+docker compose --profile prod-spa --profile ollama-cpu up --build
+```
+
+### **Alternative: Manual Setup (Without Docker)**
+If you prefer to run services directly on your host machine (not recommended for beginners):
 
 ### **1. Prerequisites**
 
@@ -341,31 +600,7 @@ docker compose up -d
 
 ### **Backend Environment (.env)**
 
-Create `backend/.env`:
-```env
-# MongoDB
-MONGO_URI=mongodb://127.0.0.1:27017
-DB_NAME=myslave
-
-# Ollama
-OLLAMA_URL=http://localhost:11434
-OLLAMA_TIMEOUT=120
-
-# CORS
-CORS_ORIGINS=["http://localhost:4200"]
-
-# Web Search (Optional)
-SERPER_API_KEY=your_serper_key
-TAVILY_API_KEY=your_tavily_key
-SEARXNG_URL=http://localhost:8080
-
-# Quotas
-SERPER_TOTAL_LIMIT=2500
-TAVILY_MONTHLY_LIMIT=1000
-
-# Logging
-LOG_LEVEL=INFO  # DEBUG for development
-```
+Copy .env.example to .env and fill in your config
 
 ### **AI Models Configuration**
 
@@ -421,7 +656,8 @@ npm run format:check
 npm run format:fix
 
 # Linting (ESLint)
-ng eslint src --fix
+npm run lint
+npm run lint:fix
 ```
 
 **Testing**
@@ -629,13 +865,12 @@ A: Recommended. System falls back to pattern-based extraction.
 ## Roadmap
 
 ### **Planned Features**
-1. Docker Compose (Single-command Docker startup)
-2. Plugin system for custom model providers. (Unified Interface for openAi, anthropic)
-3. Vector database abstraction layer (Qdrant)
-4. Collaborative sessions (shared conversations)
-5. Voice input & output
-6. Advanced GraphRAG + Tree-sitter AST + Tooling (Graph-enhanced retrieval / GraphRAG - experimental) 
-7. Ollama -> llama.cpp (maybe vLLM)
+1. Plugin system for custom model providers. (Unified Interface for e.g. openAi, anthropic)
+2. Vector database abstraction layer (Qdrant)
+3. Collaborative sessions (shared conversations)
+4. Voice input & output
+5. Advanced GraphRAG + Tree-sitter AST + Tooling (Graph-enhanced retrieval / GraphRAG - experimental) 
+6. Ollama -> llama.cpp (maybe vLLM)
 
 ---
 

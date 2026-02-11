@@ -8,17 +8,17 @@ class Settings(BaseSettings):
     """Application configuration loaded from environment variables"""
 
     # DATABASE SETTINGS
-    MONGO_URI: Optional[str] = None
-    DB_NAME: Optional[str] = None
+    MONGO_URI: Optional[str] = None # Set in .env
+    DB_NAME: Optional[str] = None # Set in .env
 
     # MongoDB connection pool settings
-    MONGO_MAX_POOL_SIZE: int | None = None
-    MONGO_MIN_POOL_SIZE: int | None = None
-    MONGO_SERVER_SELECTION_TIMEOUT_MS: int | None = None
+    MONGO_MAX_POOL_SIZE: int = 100
+    MONGO_MIN_POOL_SIZE: int = 10
+    MONGO_SERVER_SELECTION_TIMEOUT_MS: int = 5000
 
     # LLM SETTINGS (Ollama)
-    OLLAMA_URL: Optional[str] = None
-    OLLAMA_TIMEOUT: Optional[int] = None
+    OLLAMA_URL: Optional[str] = None # Set in .env
+    OLLAMA_TIMEOUT: int = 120
 
     # CORS SETTINGS
     CORS_ORIGINS: list[str] = Field(default_factory=list)
@@ -51,11 +51,11 @@ class Settings(BaseSettings):
     # Minimum similarity threshold for memory matching
     MEMORY_SEARCH_THRESHOLD: float = 0.3
 
-    # How many memories shown in final prompt
-    CHAT_MEMORY_RESULTS_LIMIT: int = 10
-
     # Max characters per memory item
     MEMORY_MAX_CHARS_PER_ITEM: int = 500
+
+    # How many memories shown in final prompt
+    CHAT_MEMORY_RESULTS_LIMIT: int = 10
 
     # Total memory content allowed in prompt
     CHAT_MEMORY_TOTAL_MAX_CHARS: int = 3000
@@ -89,9 +89,6 @@ class Settings(BaseSettings):
     CHAT_FILE_CONTENT_MAX_CHARS: int = 30000
 
     # --- URL EXTRACTION LIMITS ---
-    # Max characters from URL extraction
-    CHAT_EXTRACT_MAX_CHARS: int = 15000
-
     # Total extracted content allowed in prompt
     CHAT_EXTRACT_TOTAL_MAX_CHARS: int = 8000
 
@@ -111,6 +108,32 @@ class Settings(BaseSettings):
     EXTRACT_KEY_POINTS_MAX: int = 3  # Max key points to extract from URL content
     KEY_POINT_EXTRACTION_SAMPLE_SIZE: int = 30  # Sample first N sentences
 
+    # ============================================================
+    # PROVIDER-SPECIFIC SETTINGS
+    # ============================================================
+    # DuckDuckGo (DDG) - Free search engine
+    DDG_TIMEOUT: float = 10.0
+    DDG_LIMIT: int = 10
+
+    # SearXNG - Self-hosted metasearch engine
+    SEARXNG_URL: Optional[str] = None # Set in .env
+    SEARXNG_TIMEOUT: float = 10.0
+    SEARXNG_LIMIT: int = 10
+
+    # Serper - Google Search API (paid, quota-limited)
+    SERPER_URL: Optional[str] = None # Set in .env
+    SERPER_API_KEY: Optional[str] = None  # Required: Set in .env
+    SERPER_LIMIT: int = 10  # Results per search
+    SERPER_TOTAL_LIMIT: int = 2500  # Monthly API quota
+    SERPER_TIMEOUT: float = 20.0
+
+    # Tavily - Research API (paid, quota-limited)
+    TAVILY_URL: Optional[str] = None # Set in .env
+    TAVILY_API_KEY: Optional[str] = None  # Required: Set in .env
+    TAVILY_LIMIT: int = 5  # Results per search
+    TAVILY_TIMEOUT: float = 20.0
+    TAVILY_MONTHLY_LIMIT: int = 1000  # Monthly API quota
+
     # Auto-routing keywords for research-focused queries (Tavily)
     WEB_TAVILY_KEYWORDS: list[str] = Field(
         default_factory=lambda: [
@@ -123,48 +146,20 @@ class Settings(BaseSettings):
         ]
     )
 
-    # ============================================================
-    # PROVIDER-SPECIFIC SETTINGS
-    # ============================================================
-    # DuckDuckGo (DDG) - Free search engine
-    DDG_TIMEOUT: float = 10.0
-    DDG_LIMIT: int | None = None
-
-    # SearXNG - Self-hosted metasearch engine
-    SEARXNG_URL: Optional[str] = None
-    SEARXNG_TIMEOUT: float = 10.0
-    SEARXNG_LIMIT: int | None = None
-
-    # Serper - Google Search API (paid, quota-limited)
-    SERPER_URL: str | None = None
-    SERPER_API_KEY: str | None = None
-    SERPER_LIMIT: int | None = None  # Results per search
-    SERPER_TOTAL_LIMIT: int | None = None  # Monthly API quota
-    SERPER_TIMEOUT: float = 20.0
-
-    # Tavily - Research API (paid, quota-limited)
-    TAVILY_URL: str | None = None
-    TAVILY_API_KEY: Optional[str] = None
-    TAVILY_LIMIT: int | None = None  # Results per search
-    TAVILY_TIMEOUT: float = 20.0
-    TAVILY_MONTHLY_LIMIT: int | None = None  # Monthly API quota
-
     # WEB EXTRACTION SETTINGS
+    TAVILY_EXTRACT_MAX_LENGTH: int = 10000
+    TAVILY_EXTRACT_TIMEOUT: float = 20.0
+
     LOCAL_EXTRACT_MAX_CHARS: int = 20000
     LOCAL_EXTRACT_MAX_BYTES: int = 1_000_000
     LOCAL_EXTRACT_TIMEOUT: float = 10.0
 
-    TAVILY_EXTRACT_MAX_LENGTH: int = 10000
-    TAVILY_EXTRACT_TIMEOUT: float = 20.0
-
     # ============================================================
     # MEMORY AUTO-SAVE SETTINGS
     # ============================================================
-    MEMORY_MAX_CONTENT_LENGTH: int | None = None  # Max chars per memory entry
-    MEMORY_MIN_ASSISTANT_LENGTH: int | None = None  # Min chars in assistant response to remember
-    MEMORY_MIN_CONVERSATION_LENGTH: int | None = (
-        None  # Min combined user+assistant length to remember
-    )
+    MEMORY_MAX_CONTENT_LENGTH: int = 3000  # Max chars per memory entry
+    MEMORY_MIN_ASSISTANT_LENGTH: int = 30  # Min chars in assistant response to remember
+    MEMORY_MIN_CONVERSATION_LENGTH: int = 50  # Min combined user+assistant length to remember
 
     # Memory function defaults
     MEMORY_DEFAULT_CONFIDENCE: float = 0.95  # Default confidence for new memories
@@ -219,9 +214,6 @@ class Settings(BaseSettings):
     # Sentence scoring weights (for key point extraction)
     SENTENCE_SCORE_POSITION_WEIGHT: float = 0.6  # Weight for sentence position
     SENTENCE_SCORE_LENGTH_WEIGHT: float = 0.4  # Weight for sentence length
-
-    # Text truncation limits (for logging and previews)
-    TRUNCATE_ANSWER_LONG: int = 300  # Long answer preview
 
     # Default confidence values
     CONFIDENCE_UNCERTAINTY: float = (

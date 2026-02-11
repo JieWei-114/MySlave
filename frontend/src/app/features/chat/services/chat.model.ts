@@ -16,8 +16,8 @@ export type ChatRole = 'user' | 'assistant';
  */
 export interface MessageMetadata {
   source_used?: string; // Actual source used (combined, follow-up, memory, file, history, web)
-  sources_considered?: { [key: string]: number }; // All sources evaluated with scores
-  source_relevance?: { [key: string]: number }; // Source relevance scores
+  sources_considered?: Record<string, number>; // All sources evaluated with scores
+  source_relevance?: Record<string, number>; // Source relevance scores
   confidence?: number; // Overall confidence (deprecated, use confidence_final)
   supplemented_with?: string[]; // Additional sources used to supplement
   uncertainty_flags?: UncertaintyReport[]; // List of uncertainties with details
@@ -52,11 +52,11 @@ export interface MessageMetadata {
     unverified_entities?: string[]; // Entities not found in sources
     cap: number; // Confidence cap applied
   };
-  source_conflicts?: Array<{
+  source_conflicts?: {
     sources: string[]; // Conflicting sources
     reason: string; // Why they conflict
     confidence_reduction?: number; // How much confidence was reduced
-  }>;
+  }[];
 }
 
 /**
@@ -84,12 +84,12 @@ export interface ReasoningChainSummary {
   final_confidence?: number;
   uncertainty_flags?: string[];
   duration_ms?: number | null;
-  step_details?: Array<{
+  step_details?: {
     step: number;
     action: string;
     source: string;
     confidence: number;
-  }>;
+  }[];
 }
 
 /**
