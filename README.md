@@ -5,7 +5,8 @@
 
 ## Why MySlave?
 
-Most AI assistants are black boxes that **invent facts**, **leak your data**, and **hide their reasoning**. MySlave is different:
+MySlave implements a controlled, source-aware Retrieval-Augmented Generation (RAG) pipeline to ground AI responses in verifiable data and prevent hallucinations.
+Instead of relying solely on the language model’s internal knowledge, the system retrieves relevant information from multiple sources and injects it into the prompt with explicit confidence weighting.
 
 **100% Transparent Decision-Making** — See exactly why the AI answered what it did  
 **Privacy-First Architecture** — Everything runs locally, no telemetry, no cloud dependencies  
@@ -17,7 +18,7 @@ Most AI assistants are black boxes that **invent facts**, **leak your data**, an
 
 ## Core Capabilities
 
-### **1. Multi-Source Intelligent Context**
+### **1. Multi-Source Intelligent Context (RAG)**
 
 The AI doesn't just answer—it **intelligently assembles context** from multiple sources:
 
@@ -43,7 +44,7 @@ The AI doesn't just answer—it **intelligently assembles context** from multipl
 
 #### **Semantic Memory System**
 
-- **Embedding-Based Search**: Cosine similarity matching with configurable threshold (0.3 default)
+- **Embedding-Based Search**: Cosine embedding similarity matching with configurable threshold (0.3 default)
 - **Categorized Storage**: `preference/fact`, `important`, `other`
 - **Auto-Memory**: Automatically saves important exchanges for future context
 - **Confidence Scoring**: Each memory tracks confidence level (0.95 default)
@@ -557,7 +558,7 @@ CORS_ORIGINS=["http://localhost:4200"]  # Whitelist only
 - SSD for MongoDB
 - GPU for faster inference (optional)
 
-### **Model Memory Usage**
+### **Model Memory Usage (minimum)**
 
 - 7B parameters: ~6-8GB RAM
 - 13B parameters: ~10-12GB RAM
@@ -628,14 +629,13 @@ A: Recommended. System falls back to pattern-based extraction.
 ## Roadmap
 
 ### **Planned Features**
-1. Plugin system for custom model providers
-2. Docker Compose (Single-command Docker startup)
-3. Vector database abstraction layer (Qdrant / Weaviate support)
+1. Docker Compose (Single-command Docker startup)
+2. Plugin system for custom model providers. (Unified Interface for openAi, anthropic)
+3. Vector database abstraction layer (Qdrant)
 4. Collaborative sessions (shared conversations)
-5. Prompt preset / lightweight fine-tuning interface
-6. Voice input & output
-7. Advanced RAG (Graph-enhanced retrieval / GraphRAG - experimental)
-8. Kubernetes deployment configs
+5. Voice input & output
+6. Advanced GraphRAG + Tree-sitter AST + Tooling (Graph-enhanced retrieval / GraphRAG - experimental) 
+7. Ollama -> llama.cpp (maybe vLLM)
 
 ---
 
