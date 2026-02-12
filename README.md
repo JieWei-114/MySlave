@@ -821,8 +821,6 @@ CORS_ORIGINS=["http://localhost:4200"]  # Whitelist only
 - **ReDoc**: http://127.0.0.1:8000/redoc
 - **README**: files in major directories
 
----
-
 ## Contributing
 
 Built with best-in-class open-source tools:
@@ -833,9 +831,8 @@ Built with best-in-class open-source tools:
 - [**MongoDB**](https://www.mongodb.com) — Document database
 - [**spaCy**](https://spacy.io) — Industrial-strength NLP
 - [**SearXNG**](https://docs.searxng.org) — Privacy-respecting metasearch
-
----
-
+- [**SerperDev**](https://serper.dev/) - Google-search results in real-time 
+- [**Tavily**](https://www.tavily.com/) - Tavily is the real‑time search engine for AI agents and RAG workflows
 
 ## FAQ 
 
