@@ -622,7 +622,7 @@ AVAILABLE_MODELS = [
 ]
 ```
 
-## 🛠️ Development
+## Development
 
 ### **Backend Development**
 
@@ -781,7 +781,7 @@ CORS_ORIGINS=["http://localhost:4200"]  # Whitelist only
 
 6. **Update dependencies regularly**
 
-## 📈 Performance
+## Performance
 
 ### **System Requirements**
 
