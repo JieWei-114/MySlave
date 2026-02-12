@@ -86,7 +86,7 @@ async def call_ollama_once(prompt: str, model: str, system: Optional[str] = None
 
             # Make request
             resp = await client.post(
-                settings.OLLAMA_URL,
+                f'{settings.OLLAMA_URL}/api/generate',
                 json=payload,
             )
             resp.raise_for_status()
