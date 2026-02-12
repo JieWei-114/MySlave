@@ -343,7 +343,7 @@ docker exec -it myslave-ollama-1 bash
 # Inside container: Pull a model (choose one)
 ollama pull qwen2.5:3b
 ollama pull gemma3:1b
-ollama pull [model]
+ollama pull <model>
 
 # Exit container
 exit
@@ -358,7 +358,7 @@ docker ps | grep ollama
 #Pull a model
 docker exec -it myslave-ollama-1 ollama pull qwen2.5:3b
 docker exec -it myslave-ollama-1 ollama pull gemma3:1b
-docker exec -it myslave-ollama-1 ollama pull [model]
+docker exec -it myslave-ollama-1 ollama pull <model>
 
 ```
 
@@ -517,7 +517,7 @@ mongod --version  # 4.6+
 
 # Install Ollama (https://ollama.ai)
 ollama pull llama2:7b
-ollama pull [model]
+ollama pull <model>
 ```
 
 ### **2. Backend Setup**
@@ -616,7 +616,7 @@ AVAILABLE_MODELS = [
         "id": "llama2:13b",
         "name": "Llama 2 13B",
         "description": "Powerful reasoning",
-        "context_length": 4096
+        'size': '13B'
     },
     # Add custom models
 ]
@@ -704,7 +704,7 @@ curl http://localhost:11434/api/tags
 ollama serve
 
 # Pull missing models
-ollama pull gemma:7b
+ollama pull <model>
 ```
 
 ### **Web search no results**
