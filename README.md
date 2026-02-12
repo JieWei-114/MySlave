@@ -1,6 +1,6 @@
 # MySlave – Advanced Local AI Assistant Platform
 
-**Your data. Your AI. Your rules.** A production-ready AI assistant platform engineered for privacy, reliability, and transparency. Built on Angular 21 + FastAPI + MongoDB with intelligent multi-source reasoning, real-time streaming, and zero-hallucination architecture.
+**Your data. Your AI. Your rules.** A AI assistant platform engineered for privacy, reliability, and transparency. Built on Angular 21 + FastAPI + MongoDB with intelligent multi-source reasoning, real-time streaming, and zero-hallucination architecture.
 
 
 ## Why MySlave?
