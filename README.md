@@ -90,9 +90,8 @@ MySlave separates **factual sources** and **contextual sources**:
 - **Stem Match**: Handles plurals/tenses ("company" ↔ "companies")
 - **Acronym Expansion**: "FBI" ↔ "Federal Bureau Investigation"
 
-**Factual Guard**
+**Factual Guard** - Risk Levels:
 
-- Risk Levels:
 - HIGH: 6+ Unverified entities → Cap confidence to 0.4
 - MED: 3-5 Unverified entities → Cap confidence to 0.5
 - LOW: <3 Unverified entities → Cap confidence to 0.6
