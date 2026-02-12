@@ -239,7 +239,7 @@ Per-session:
 
 ## Quick Start
 
-### **Docker One-Command Startup (Still in Progress)**
+### **Docker One-Command Startup**
 **Zero host dependencies.** Everything runs in containers — no heavy installation required on your machine.
 
 #### **What You Need on Your Computer**
@@ -341,7 +341,8 @@ The Ollama container is running but **has no models yet**. Pull one:
 docker exec -it myslave-ollama-1 bash
 
 # Inside container: Pull a model (choose one)
-ollama pull qwen2.5:14b
+ollama pull qwen2.5:3b
+ollama pull gemma3:1b
 ollama pull [model]
 
 # Exit container
@@ -351,10 +352,14 @@ exit
 **Alternative: Pull from host** (if Ollama container name is different)
 
 ```bash
-docker exec -it <ollama-container-name> ollama pull llama3.2:3b
 # Find container name:
-
 docker ps | grep ollama
+
+#Pull a model
+docker exec -it myslave-ollama-1 ollama pull qwen2.5:3b
+docker exec -it myslave-ollama-1 ollama pull gemma3:1b
+docker exec -it myslave-ollama-1 ollama pull [model]
+
 ```
 
 **Step 5: Access the Application**

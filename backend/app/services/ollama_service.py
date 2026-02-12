@@ -41,7 +41,7 @@ async def stream_ollama(prompt: str, model: str, system: Optional[str] = None):
             # Stream response
             async with client.stream(
                 'POST',
-                settings.OLLAMA_URL,
+                f'{settings.OLLAMA_URL}/api/generate',
                 json=payload,
             ) as resp:
                 resp.raise_for_status()
