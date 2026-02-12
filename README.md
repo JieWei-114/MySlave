@@ -877,6 +877,7 @@ A: Recommended. System falls back to pattern-based extraction.
 5. Advanced GraphRAG + Tree-sitter AST + Tooling (Graph-enhanced retrieval / GraphRAG - experimental) 
 6. Ollama -> llama.cpp (maybe vLLM)
 
----
+## App screenshot
+![App screenshot](/frontend/src/assets/images/app_screenshot.png)
 
 **Built with ❤️ for privacy-conscious developers**
