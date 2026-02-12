@@ -18,7 +18,7 @@ Instead of relying solely on the language model’s internal knowledge, the syst
 
 ## Core Capabilities
 
-### **1. Multi-Source Intelligent Context (RAG)**
+### **1. Multi-Source Intelligent Context - RAG**
 
 The AI doesn't just answer—it **intelligently assembles context** from multiple sources:
 
