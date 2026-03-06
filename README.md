@@ -866,12 +866,15 @@ A: Recommended. System falls back to pattern-based extraction.
 ## Roadmap
 
 ### **Planned Features**
-1. Plugin system for custom model providers. (Unified Interface for e.g. openAi, anthropic)
-2. Vector database abstraction layer (Qdrant)
-3. Collaborative sessions (shared conversations)
-4. Voice input & output
-5. Advanced GraphRAG + Tree-sitter AST + Tooling (Graph-enhanced retrieval / GraphRAG - experimental) 
-6. Ollama -> llama.cpp (maybe vLLM)
+1. Plugin system for custom model providers. (Unified Interface for e.g. openAi, anthropic, Hugging Face)
+2. Local Model Runtime Layer (ollama => lama.cpp or vLLM)
+3. Hugging Face integration - AI model repository
+4. Vector database abstraction layer (Qdrant)
+5. Tauri Desktop (UI)
+6. Voice input & output (speech → text → AI → speech)
+7. Advanced GraphRAG + Tree-sitter AST + Tooling (Graph-enhanced retrieval / GraphRAG - experimental)
+8. Image & Video Generation - Stable Diffusion integration (From: Civitai, Run: ComfyUI)
+9. Ollama -> llama.cpp (maybe vLLM)
 
 ## App screenshot
 ![App screenshot](/frontend/src/assets/images/app_screenshot.png)
